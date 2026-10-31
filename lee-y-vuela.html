@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lee y Vuela — Lectura fluida</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --tinta:#1e293b;
+  --naranja:#ff8a3d; --naranjaO:#d4621c;
+  --verde:#22c55e;  --verdeO:#15803d;
+  --morado:#8b5cf6; --moradoO:#6d28d9;
+  --rosa:#ec4899;   --rosaO:#be185d;
+  --amarillo:#fbbf24; --amarilloO:#b45309;
+  --azul:#3b82f6;   --azulO:#1d4ed8;
+  --cian:#06b6d4;   --cianO:#0e7490;
+  --s0:#1d4ed8; --s1:#e11d48;
+  --tam:44px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{font-family:'Fredoka',system-ui,sans-serif;color:var(--tinta);
+  background:linear-gradient(180deg,#38bdf8 0%,#7dd3fc 40%,#e0f7ff 85%,#c7f9cc 100%);
+  background-attachment:fixed;min-height:100vh;overflow-x:hidden}
+button{font-family:inherit}
+.nubes{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.nube{position:absolute;background:#fff;border-radius:999px;opacity:.9;animation:flotar linear infinite;filter:drop-shadow(0 6px 0 rgba(255,255,255,.4))}
+.nube::before,.nube::after{content:'';position:absolute;background:#fff;border-radius:50%}
+.nube::before{width:55%;height:160%;left:15%;top:-70%}
+.nube::after{width:40%;height:120%;right:12%;top:-45%}
+@keyframes flotar{from{transform:translateX(-30vw)}to{transform:translateX(130vw)}}
+.colinas{position:fixed;left:0;right:0;bottom:0;height:120px;z-index:0;pointer-events:none}
+
+#app{position:relative;z-index:1;max-width:1000px;margin:0 auto;padding:14px 14px 40px}
+.pantalla{display:none;animation:entrar .35s ease}
+.pantalla.activa{display:block}
+@keyframes entrar{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* Botones 3D */
+.btn{--c:var(--naranja);--co:var(--naranjaO);font-weight:600;font-size:19px;border:none;border-radius:18px;
+  padding:12px 20px;color:#fff;cursor:pointer;background:var(--c);
+  box-shadow:0 6px 0 var(--co),0 10px 18px rgba(0,0,0,.18);transition:transform .08s,box-shadow .08s,filter .2s;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;text-shadow:0 1px 0 rgba(0,0,0,.18);user-select:none}
+.btn:hover{filter:brightness(1.06)}
+.btn:active{transform:translateY(5px);box-shadow:0 1px 0 var(--co),0 3px 6px rgba(0,0,0,.15)}
+.btn:disabled{filter:grayscale(.7) opacity(.6);cursor:not-allowed}
+.btn.verde{--c:var(--verde);--co:var(--verdeO)}
+.btn.morado{--c:var(--morado);--co:var(--moradoO)}
+.btn.rosa{--c:var(--rosa);--co:var(--rosaO)}
+.btn.azul{--c:var(--azul);--co:var(--azulO)}
+.btn.cian{--c:var(--cian);--co:var(--cianO)}
+.btn.amarillo{--c:var(--amarillo);--co:var(--amarilloO)}
+.btn.blanco{--c:#fff;--co:#cbd5e1;color:var(--tinta);text-shadow:none}
+.btn.grande{font-size:24px;padding:16px 30px;border-radius:22px}
+.btn.chico{font-size:16px;padding:8px 14px;border-radius:14px;box-shadow:0 4px 0 var(--co),0 6px 10px rgba(0,0,0,.12)}
+
+/* Barra superior */
+.barra{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.92);border-radius:22px;padding:8px 10px;
+  box-shadow:0 6px 0 rgba(14,116,144,.25),0 10px 24px rgba(0,0,0,.08);margin-bottom:16px}
+.barra h2{flex:1;font-size:22px;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.contador{display:flex;align-items:center;gap:6px;background:#fff7d6;border:3px solid #fde68a;border-radius:999px;padding:4px 12px;font-weight:700;font-size:18px}
+.icono-btn{width:46px;height:46px;border-radius:14px;border:none;background:#e0f2fe;font-size:24px;cursor:pointer;box-shadow:0 4px 0 #7dd3fc;transition:transform .08s}
+.icono-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #7dd3fc}
+
+/* Pico */
+.pico{width:150px;height:auto;animation:planear 3s ease-in-out infinite;filter:drop-shadow(0 10px 6px rgba(0,0,0,.15))}
+.pico .ala{transform-box:fill-box;transform-origin:50% 100%;animation:aleteo .12s ease-in-out infinite alternate}
+@keyframes aleteo{from{transform:rotate(-18deg) scaleY(1)}to{transform:rotate(14deg) scaleY(.45)}}
+@keyframes planear{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(2deg)}}
+
+/* Inicio */
+.inicio{min-height:86vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:16px}
+.titulo{font-size:clamp(46px,10vw,92px);font-weight:700;line-height:1;letter-spacing:1px;color:#fff;
+  text-shadow:0 4px 0 #f97316,0 8px 0 #c2410c,0 14px 22px rgba(0,0,0,.25)}
+.titulo span{color:#fde047}
+.subtitulo{font-size:22px;background:rgba(255,255,255,.85);padding:8px 20px;border-radius:999px;font-weight:500}
+.campo{font-family:'Andika',sans-serif;font-size:26px;padding:12px 20px;border-radius:18px;border:4px solid #fff;
+  box-shadow:0 6px 0 #7dd3fc;outline:none;text-align:center;width:min(420px,90vw);background:#fff}
+.campo:focus{border-color:#fde047}
+.nota-chica{font-size:15px;color:#0c4a6e;opacity:.85}
+
+/* Menú */
+.saludo{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.9);border-radius:26px;padding:12px 18px;margin-bottom:18px;
+  box-shadow:0 6px 0 rgba(14,116,144,.2)}
+.saludo .pico{width:90px}
+.saludo .globo{font-size:22px;font-weight:500}
+.islas{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.isla{position:relative;border:none;cursor:pointer;text-align:left;border-radius:28px;padding:20px;color:#fff;min-height:170px;
+  background:linear-gradient(145deg,var(--a),var(--b));box-shadow:0 10px 0 var(--o),0 18px 28px rgba(0,0,0,.18);
+  transition:transform .15s,box-shadow .15s;overflow:hidden}
+.isla:hover{transform:translateY(-4px) rotate(-.5deg)}
+.isla:active{transform:translateY(6px);box-shadow:0 3px 0 var(--o)}
+.isla .emo{font-size:58px;line-height:1;filter:drop-shadow(0 4px 0 rgba(0,0,0,.15))}
+.isla h3{font-size:26px;margin:8px 0 4px;text-shadow:0 2px 0 rgba(0,0,0,.18)}
+.isla p{font-size:16px;opacity:.95;line-height:1.3}
+.isla .num{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.25);border-radius:999px;padding:3px 12px;font-weight:700}
+.isla::after{content:'';position:absolute;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.12);right:-40px;bottom:-50px}
+
+/* Listas */
+.lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.tarjeta{border:none;cursor:pointer;background:#fff;border-radius:22px;padding:16px;text-align:center;
+  box-shadow:0 7px 0 #bae6fd,0 12px 20px rgba(0,0,0,.08);transition:transform .12s}
+.tarjeta:hover{transform:translateY(-3px)}
+.tarjeta:active{transform:translateY(5px);box-shadow:0 2px 0 #bae6fd}
+.tarjeta .emo{font-size:50px}
+.tarjeta h4{font-size:19px;margin:6px 0;font-weight:600}
+.tarjeta .estrellas{font-size:20px;letter-spacing:2px}
+.chip{display:inline-block;font-size:13px;font-weight:600;border-radius:999px;padding:2px 10px;margin-top:4px}
+.n1{background:#dcfce7;color:#166534}.n2{background:#fef3c7;color:#92400e}.n3{background:#fce7f3;color:#9d174d}
+.filtros{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;justify-content:center}
+
+/* Hoja de lectura */
+.hoja{position:relative;background:#fffdf5;border-radius:30px;padding:26px 28px;font-family:'Andika',sans-serif;
+  font-size:var(--tam);line-height:1.75;box-shadow:0 10px 0 #eadfc2,0 20px 34px rgba(0,0,0,.12);
+  background-image:repeating-linear-gradient(transparent 0, transparent calc(var(--tam)*1.75 - 2px), #e0f2fe calc(var(--tam)*1.75 - 2px), #e0f2fe calc(var(--tam)*1.75));
+  background-position:0 26px;min-height:140px;word-spacing:.12em}
+.hoja .linea{margin-bottom:.15em}
+.hoja .linea.oculta{display:none}
+.hoja .linea.aparece{animation:aparece .6s cubic-bezier(.2,1.6,.4,1)}
+@keyframes aparece{from{opacity:0;transform:translateY(20px) scale(.9)}to{opacity:1;transform:none}}
+.escalera .linea{padding-left:calc(var(--esc,0) * 1em)}
+.w{display:inline-block;padding:0 .1em;border-radius:12px;cursor:pointer;transition:background .2s,transform .2s,color .2s}
+.w:hover{background:#f1f5f9}
+.w.actual{background:#fde047;box-shadow:0 0 0 4px rgba(253,224,71,.5);transform:scale(1.07)}
+.w.pico-lee{background:#bae6fd;box-shadow:0 0 0 4px rgba(125,211,252,.6);transform:scale(1.1)}
+.w.ok{background:#dcfce7}
+.w.ok .sil{color:#15803d !important}
+.w.salto{background:#ffedd5;text-decoration:underline wavy #fb923c;text-underline-offset:6px}
+.w.mal{background:#fee2e2;text-decoration:line-through #dc2626 3px}
+.w.corregida{background:#fef3c7}
+.w.corregida .sil{color:#b45309 !important}
+.w.intenta{animation:intenta .5s;background:#fecaca !important;box-shadow:0 0 0 4px rgba(239,68,68,.45) !important}
+@keyframes intenta{20%,60%{transform:translateX(-7px) scale(1.07)}40%,80%{transform:translateX(7px) scale(1.07)}}
+.carta.mal{animation:cartaMal .5s;background:#fee2e2}
+@keyframes cartaMal{20%,60%{transform:translateX(-12px)}40%,80%{transform:translateX(12px)}}
+.otra-vez{display:none;font-size:22px;font-weight:700;color:#b91c1c;background:#fff;border-radius:999px;padding:6px 18px;box-shadow:0 4px 0 #fecaca}
+.otra-vez.on{display:inline-block;animation:aparece .4s}
+.leyenda{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;font-size:15px;margin-top:8px}
+.leyenda span{background:rgba(255,255,255,.9);border-radius:999px;padding:3px 12px}
+.w.mal .sil{color:#b91c1c !important}
+body.silabas .s0{color:var(--s0)}
+body.silabas .s1{color:var(--s1)}
+.punt{color:#64748b}
+
+.cabeza-lectura{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.cabeza-lectura .emo{font-size:60px;filter:drop-shadow(0 5px 0 rgba(0,0,0,.12))}
+.cabeza-lectura h3{font-size:30px;color:#fff;text-shadow:0 3px 0 rgba(3,105,161,.6)}
+.instruccion{background:rgba(255,255,255,.88);border-radius:16px;padding:8px 14px;font-size:17px;flex:1;min-width:220px}
+
+.controles{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:22px 0 10px}
+.velocidades{display:flex;gap:6px;background:rgba(255,255,255,.9);padding:6px;border-radius:16px}
+.vel{border:none;background:#f1f5f9;border-radius:12px;font-size:26px;padding:4px 10px;cursor:pointer}
+.vel.sel{background:#fde047;box-shadow:0 3px 0 #ca8a04}
+
+.estado{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-top:8px}
+.pastilla{background:rgba(255,255,255,.92);border-radius:999px;padding:6px 16px;font-weight:600;font-size:18px;box-shadow:0 4px 0 rgba(14,116,144,.2)}
+.oreja{display:none;align-items:center;gap:8px;background:#fef2f2;color:#b91c1c;border-radius:999px;padding:6px 16px;font-weight:600}
+.oreja.on{display:inline-flex}
+.punto-rojo{width:14px;height:14px;border-radius:50%;background:#ef4444;animation:pulso 1s infinite}
+@keyframes pulso{0%{box-shadow:0 0 0 0 rgba(239,68,68,.6)}100%{box-shadow:0 0 0 14px rgba(239,68,68,0)}}
+.escuche{text-align:center;font-size:14px;color:#0c4a6e;margin-top:6px;min-height:20px;font-style:italic;opacity:.8}
+
+.aviso{display:none;background:#fff7ed;border:3px dashed #fb923c;border-radius:18px;padding:10px 14px;margin-bottom:14px;font-size:16px;align-items:center;gap:10px;flex-wrap:wrap}
+.aviso.on{display:flex}
+.aviso b{color:#c2410c}
+
+/* Palabras rápidas */
+.niveles{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+.juego-palabras{display:none;flex-direction:column;align-items:center;gap:16px}
+.juego-palabras.on{display:flex}
+.reloj-barra{width:100%;height:22px;background:rgba(255,255,255,.7);border-radius:999px;overflow:hidden;box-shadow:inset 0 3px 0 rgba(0,0,0,.08)}
+.reloj-barra div{height:100%;width:100%;background:linear-gradient(90deg,#22c55e,#facc15,#f97316);border-radius:999px;transition:width .25s linear}
+.carta{position:relative;background:#fffdf5;border-radius:36px;min-width:min(560px,92vw);min-height:220px;display:flex;align-items:center;justify-content:center;
+  font-family:'Andika',sans-serif;font-size:calc(var(--tam) * 2.1);font-weight:700;box-shadow:0 12px 0 #eadfc2,0 22px 34px rgba(0,0,0,.14);padding:20px 30px}
+.carta.bien{animation:bien .45s}
+@keyframes bien{30%{transform:scale(1.08);background:#dcfce7}100%{transform:none}}
+.carta .premio{position:absolute;top:-30px;right:-10px;font-size:70px;animation:premio .7s ease-out forwards;pointer-events:none}
+@keyframes premio{from{opacity:0;transform:scale(.3) rotate(-30deg)}50%{opacity:1;transform:scale(1.2)}to{opacity:0;transform:translateY(-60px) scale(1)}}
+.marcador{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.cuenta{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:50;background:rgba(14,165,233,.55);backdrop-filter:blur(3px)}
+.cuenta.on{display:flex}
+.cuenta span{font-size:180px;font-weight:700;color:#fff;text-shadow:0 8px 0 #f97316,0 16px 30px rgba(0,0,0,.3);animation:latido .9s}
+@keyframes latido{from{transform:scale(2.2);opacity:0}40%{transform:scale(1);opacity:1}}
+
+/* Modal */
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:60;background:rgba(15,23,42,.45);padding:16px;backdrop-filter:blur(2px)}
+.modal.on{display:flex}
+.caja{background:#fff;border-radius:30px;padding:24px;width:min(560px,100%);max-height:92vh;overflow:auto;text-align:center;
+  box-shadow:0 10px 0 #bae6fd,0 30px 60px rgba(0,0,0,.3);animation:caja .4s cubic-bezier(.2,1.5,.4,1)}
+@keyframes caja{from{transform:scale(.7);opacity:0}to{transform:none;opacity:1}}
+.caja h2{font-size:32px;margin-bottom:6px}
+.grandes-estrellas{font-size:64px;letter-spacing:6px;margin:6px 0}
+.grandes-estrellas span{display:inline-block;filter:grayscale(1) opacity(.3);transform:scale(.6);transition:all .4s cubic-bezier(.2,1.8,.4,1)}
+.grandes-estrellas span.on{filter:none;transform:scale(1)}
+.datos{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:14px 0}
+.dato{background:#f0f9ff;border-radius:18px;padding:10px}
+.dato b{display:block;font-size:30px;color:#0369a1}
+.dato small{font-size:14px;color:#475569}
+.fila-btn{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+.mini-graf{margin:10px auto 0;max-width:420px}
+.premios-leidos{font-size:34px;letter-spacing:4px;word-break:break-all}
+
+/* Preguntas */
+.opciones{display:grid;gap:12px;margin-top:16px}
+.opcion{border:none;cursor:pointer;font-family:'Andika',sans-serif;font-size:24px;padding:14px;border-radius:18px;background:#f1f5f9;box-shadow:0 5px 0 #cbd5e1;transition:transform .08s}
+.opcion:active{transform:translateY(4px);box-shadow:0 1px 0 #cbd5e1}
+.opcion.si{background:#bbf7d0;box-shadow:0 5px 0 #22c55e}
+.opcion.no{background:#fecaca;box-shadow:0 5px 0 #ef4444;animation:temblor .35s}
+@keyframes temblor{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.pregunta{font-family:'Andika',sans-serif;font-size:28px;font-weight:700}
+
+/* Ajustes */
+.ajuste{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 4px;border-bottom:2px dashed #e2e8f0;text-align:left;font-size:18px;flex-wrap:wrap}
+.ajuste input[type=range]{width:180px;accent-color:#f97316}
+.ajuste select,.ajuste input[type=text]{font-family:inherit;font-size:16px;padding:8px 10px;border-radius:12px;border:2px solid #cbd5e1;max-width:240px}
+.interruptor{width:64px;height:36px;border-radius:999px;background:#cbd5e1;border:none;position:relative;cursor:pointer;transition:background .2s}
+.interruptor::after{content:'';position:absolute;width:28px;height:28px;border-radius:50%;background:#fff;top:4px;left:4px;transition:left .2s;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+.interruptor.on{background:#22c55e}
+.interruptor.on::after{left:32px}
+.ejemplo-sil{font-family:'Andika',sans-serif;font-size:26px}
+
+/* Logros */
+.panel{background:rgba(255,255,255,.94);border-radius:26px;padding:18px;box-shadow:0 7px 0 #bae6fd;margin-bottom:18px}
+.panel h3{font-size:22px;margin-bottom:10px}
+.album{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:10px}
+.sticker{aspect-ratio:1;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:42px;background:#f1f5f9;border:3px dashed #cbd5e1}
+.sticker.on{background:radial-gradient(circle,#fff7d6,#fde68a);border:3px solid #f59e0b;animation:brillo 2.5s infinite}
+.sticker:not(.on) span{filter:grayscale(1) brightness(1.6) opacity(.35)}
+@keyframes brillo{50%{box-shadow:0 0 18px rgba(245,158,11,.6)}}
+.pasos-mic{text-align:left;margin:12px 0;display:grid;gap:10px}
+.pasos-mic div{display:flex;gap:12px;align-items:flex-start;background:#f0f9ff;border-radius:16px;padding:10px 14px;font-size:18px;line-height:1.35}
+.pasos-mic b.n{flex:none;width:32px;height:32px;border-radius:50%;background:#0ea5e9;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px}
+.barra-dir{display:inline-flex;align-items:center;gap:8px;background:#f1f5f9;border:2px solid #cbd5e1;border-radius:999px;padding:4px 14px;font-family:monospace;font-size:15px;margin-top:6px}
+.tabla-hist{width:100%;border-collapse:collapse;font-size:16px}
+.tabla-hist th,.tabla-hist td{padding:6px 8px;border-bottom:1px solid #e2e8f0;text-align:left}
+.tabla-hist th{color:#0369a1}
+
+#confeti{position:fixed;inset:0;pointer-events:none;z-index:70}
+.burbuja-pico{position:fixed;right:14px;bottom:14px;z-index:40;display:flex;align-items:flex-end;gap:6px;pointer-events:none}
+.burbuja-pico .msg{background:#fff;border-radius:20px 20px 4px 20px;padding:10px 14px;font-size:18px;font-weight:500;box-shadow:0 6px 16px rgba(0,0,0,.15);max-width:260px;opacity:0;transform:translateY(10px);transition:all .3s}
+.burbuja-pico .msg.on{opacity:1;transform:none}
+.burbuja-pico .pico{width:84px}
+
+@media (max-width:600px){
+  .hoja{padding:18px 16px;border-radius:22px}
+  .barra h2{font-size:18px}
+  .cabeza-lectura .emo{font-size:46px}
+  .cabeza-lectura h3{font-size:24px}
+  .btn.grande{font-size:20px;padding:14px 22px}
+  .burbuja-pico .pico{width:64px}
+}
+</style>
+</head>
+<body class="silabas">
+<div class="nubes" id="nubes"></div>
+<svg class="colinas" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
+  <path d="M0 70 Q 240 10 480 60 T 960 55 T 1440 50 V120 H0Z" fill="#86efac"/>
+  <path d="M0 95 Q 300 50 620 90 T 1440 85 V120 H0Z" fill="#4ade80"/>
+</svg>
+
+<!-- Plantilla del picaflor Pico -->
+<template id="tplPico">
+<svg class="pico" viewBox="0 0 130 100" aria-label="Pico el picaflor">
+  <path d="M40 62 L8 48 L16 64 L4 78 L42 70 Z" fill="#0d9488"/>
+  <ellipse cx="58" cy="44" rx="11" ry="26" fill="#34d399" class="ala" opacity=".75"/>
+  <ellipse cx="62" cy="62" rx="28" ry="19" fill="#10b981"/>
+  <ellipse cx="66" cy="68" rx="18" ry="10" fill="#a7f3d0" opacity=".7"/>
+  <circle cx="86" cy="46" r="16" fill="#059669"/>
+  <path d="M78 54 Q 88 66 98 52 Q 90 58 78 54Z" fill="#ef4444"/>
+  <circle cx="91" cy="42" r="5" fill="#fff"/><circle cx="92.5" cy="42" r="2.8" fill="#0f172a"/><circle cx="93.5" cy="41" r="1" fill="#fff"/>
+  <path d="M100 46 L128 43 L100 50 Z" fill="#334155"/>
+  <ellipse cx="62" cy="40" rx="12" ry="28" fill="#6ee7b7" class="ala"/>
+</svg>
+</template>
+
+<div id="app">
+
+<!-- ============ INICIO ============ -->
+<section class="pantalla activa" id="p-inicio">
+  <div class="inicio">
+    <div id="picoInicio"></div>
+    <h1 class="titulo">Lee y <span>Vuela</span></h1>
+    <div class="subtitulo">✨ ¡Aprende a leer rapidito y sin trabarte! ✨</div>
+    <input class="campo" id="inNombre" maxlength="20" placeholder="Escribe tu nombre (opcional)" autocomplete="off">
+    <button class="btn grande verde" id="btnEmpezar">¡A volar! 🚀</button>
+    <div class="nota-chica">🎤 Funciona mejor en Google Chrome con micrófono · 🔊 Sube el volumen</div>
+  </div>
+</section>
+
+<!-- ============ MENÚ ============ -->
+<section class="pantalla" id="p-menu">
+  <div class="barra">
+    <button class="icono-btn" data-ir="inicio" title="Inicio">🏠</button>
+    <h2>Lee y Vuela</h2>
+    <div class="contador">⭐ <span class="totEst">0</span></div>
+    <button class="icono-btn btnAjustes" title="Ajustes">⚙️</button>
+  </div>
+  <div class="saludo"><div class="picoMini"></div><div class="globo" id="saludoTxt">¡Hola! ¿Qué leemos hoy?</div></div>
+  <div class="islas">
+    <button class="isla" style="--a:#fb923c;--b:#f43f5e;--o:#be123c" data-ir="palabras">
+      <span class="num">1</span><div class="emo">⚡</div><h3>Palabras Rápidas</h3><p>¿Cuántas palabras lees en un minuto? ¡Lee y gana premios!</p></button>
+    <button class="isla" style="--a:#a78bfa;--b:#6366f1;--o:#4338ca" data-ir="escaleras">
+      <span class="num">2</span><div class="emo">🪜</div><h3>Frases Escalera</h3><p>Frases que crecen paso a paso. ¡Sube la escalera leyendo!</p></button>
+    <button class="isla" style="--a:#22d3ee;--b:#0ea5e9;--o:#0369a1" data-ir="conmigo">
+      <span class="num">3</span><div class="emo">🐦</div><h3>Lee Conmigo</h3><p>Pico lee primero y las palabras se iluminan. ¡Luego lees tú!</p></button>
+    <button class="isla" style="--a:#4ade80;--b:#10b981;--o:#047857" data-ir="cuentos">
+      <span class="num">4</span><div class="emo">📖</div><h3>Cuentos Voladores</h3><p>Lee cuentos en voz alta, mide tu rapidez y responde preguntas.</p></button>
+    <button class="isla" style="--a:#facc15;--b:#f59e0b;--o:#b45309" data-ir="logros">
+      <span class="num">5</span><div class="emo">🏆</div><h3>Mis Logros</h3><p>Mira cuánto has mejorado y colecciona stickers.</p></button>
+  </div>
+</section>
+
+<!-- ============ PALABRAS RÁPIDAS ============ -->
+<section class="pantalla" id="p-palabras">
+  <div class="barra">
+    <button class="icono-btn" data-ir="menu" title="Volver">⬅️</button>
+    <h2>⚡ Palabras Rápidas</h2>
+    <div class="contador">⭐ <span class="totEst">0</span></div>
+    <button class="icono-btn btnAjustes" title="Ajustes">⚙️</button>
+  </div>
+  <div class="aviso avisoIframe"><span>🎤 <b>Para usar el micrófono</b> abre la app en una ventana nueva.</span><button class="btn chico naranja btnVentana">Abrir ventana ↗</button></div>
+  <div id="palNiveles">
+    <div class="instruccion" style="margin-bottom:16px;text-align:center">Lee en voz alta cada palabra que aparece. ¡Tienes <b>1 minuto</b>! Si el micrófono no funciona, toca <b>✓ ¡La leí!</b></div>
+    <div class="niveles" id="listaNiveles"></div>
+  </div>
+  <div class="juego-palabras" id="palJuego">
+    <div class="reloj-barra"><div id="relojBarra"></div></div>
+    <div class="marcador">
+      <div class="pastilla">⏱ <span id="palTiempo">60</span> s</div>
+      <div class="pastilla">✅ <span id="palAciertos">0</span></div>
+      <div class="pastilla">🔁 <span id="palErrores">0</span></div>
+      <div class="oreja" id="palOreja"><span class="punto-rojo"></span> Te escucho…</div>
+    </div>
+    <div class="carta" id="palCarta">sapo</div>
+    <span class="otra-vez" id="palOtraVez">🔁 ¡Otra vez! Léela bien</span>
+    <div class="controles">
+      <button class="btn verde grande" id="palBien">✓ ¡La leí!</button>
+      <button class="btn blanco" id="palEscuchar">🔊 Ayuda</button>
+      <button class="btn amarillo" id="palPaso">⏭ Paso</button>
+      <button class="btn rosa" id="palParar">⏹ Terminar</button>
+    </div>
+    <div class="escuche" id="palEscuche"></div>
+  </div>
+</section>
+
+<!-- ============ LISTAS ============ -->
+<section class="pantalla" id="p-escaleras">
+  <div class="barra"><button class="icono-btn" data-ir="menu">⬅️</button><h2>🪜 Frases Escalera</h2><div class="contador">⭐ <span class="totEst">0</span></div><button class="icono-btn btnAjustes">⚙️</button></div>
+  <div class="instruccion" style="margin-bottom:16px;text-align:center">Lee la frase. Cuando la termines, aparece un escalón más largo. ¡Llega hasta arriba!</div>
+  <div class="lista" id="listaEscaleras"></div>
+</section>
+<section class="pantalla" id="p-conmigo">
+  <div class="barra"><button class="icono-btn" data-ir="menu">⬅️</button><h2>🐦 Lee Conmigo</h2><div class="contador">⭐ <span class="totEst">0</span></div><button class="icono-btn btnAjustes">⚙️</button></div>
+  <div class="instruccion" style="margin-bottom:16px;text-align:center">Primero escucha a Pico mientras sigues las palabras con la vista. Luego lee tú igualito.</div>
+  <div class="lista" id="listaConmigo"></div>
+</section>
+<section class="pantalla" id="p-cuentos">
+  <div class="barra"><button class="icono-btn" data-ir="menu">⬅️</button><h2>📖 Cuentos Voladores</h2><div class="contador">⭐ <span class="totEst">0</span></div><button class="icono-btn btnAjustes">⚙️</button></div>
+  <div class="filtros" id="filtrosCuentos"></div>
+  <div class="lista" id="listaCuentos"></div>
+</section>
+
+<!-- ============ LECTURA ============ -->
+<section class="pantalla" id="p-lectura">
+  <div class="barra">
+    <button class="icono-btn" id="lecVolver">⬅️</button>
+    <h2 id="lecTituloBarra">Lectura</h2>
+    <div class="contador">⭐ <span class="totEst">0</span></div>
+    <button class="icono-btn btnAjustes">⚙️</button>
+  </div>
+  <div class="aviso avisoIframe"><span>🎤 <b>Para usar el micrófono</b> abre la app en una ventana nueva.</span><button class="btn chico naranja btnVentana">Abrir ventana ↗</button></div>
+  <div class="aviso" id="avisoSinVoz"><span>🎤 Este navegador no reconoce la voz. Abre la app en <b>Google Chrome</b> o <b>Microsoft Edge</b>.</span></div>
+  <div class="cabeza-lectura">
+    <div class="emo" id="lecEmo">📖</div>
+    <h3 id="lecTitulo">Título</h3>
+    <div class="instruccion" id="lecInstr">Toca una palabra para escucharla.</div>
+  </div>
+  <div class="hoja" id="hoja"></div>
+  <div class="estado">
+    <div class="pastilla">⏱ <span id="lecTiempo">0</span> s</div>
+    <div class="pastilla">📝 <span id="lecProg">0/0</span></div>
+    <div class="oreja" id="lecOreja"><span class="punto-rojo"></span> Te escucho… ¡lee en voz alta!</div>
+  </div>
+  <div style="text-align:center;margin-top:8px"><span class="otra-vez" id="lecOtraVez">🔁 ¡Otra vez! Léela bien</span></div>
+  <div class="escuche" id="lecEscuche"></div>
+  <div class="leyenda" id="lecLeyenda"><span>🟩 bien a la primera</span><span>🟨 corregida</span><span>🟥 inténtalo otra vez</span></div>
+  <div class="controles" id="lecControles">
+    <button class="btn cian" id="btnPico">🐦 Escuchar a Pico</button>
+    <div class="velocidades" id="velocidades" title="Velocidad de Pico">
+      <button class="vel" data-v="0.65" title="Lento">🐢</button>
+      <button class="vel" data-v="0.85" title="Normal">🐇</button>
+      <button class="vel" data-v="1.05" title="Rápido">🦅</button>
+    </div>
+    <button class="btn naranja grande" id="btnLeo">🎤 ¡Leo yo!</button>
+    <button class="btn verde grande" id="btnTermine" style="display:none">🏁 ¡Terminé!</button>
+    <button class="btn blanco" id="btnParar" style="display:none">⏹ Parar</button>
+  </div>
+</section>
+
+<!-- ============ LOGROS ============ -->
+<section class="pantalla" id="p-logros">
+  <div class="barra"><button class="icono-btn" data-ir="menu">⬅️</button><h2>🏆 Mis Logros</h2><div class="contador">⭐ <span class="totEst">0</span></div><button class="icono-btn btnAjustes">⚙️</button></div>
+  <div class="panel"><div class="datos" id="logDatos"></div></div>
+  <div class="panel"><h3>📈 Mi rapidez leyendo (palabras por minuto)</h3><div id="logGrafico"></div></div>
+  <div class="panel"><h3>🎁 Álbum de stickers <small style="font-weight:400;font-size:15px">(1 sticker cada 6 estrellas)</small></h3><div class="album" id="album"></div></div>
+  <div class="panel"><h3>🗣️ Historial de pronunciación</h3>
+    <div class="datos" id="pronDatos"></div>
+    <div class="fila-btn" style="margin:0 0 10px"><button class="btn chico morado" id="btnPracticar">🎯 Practicar palabras difíciles</button><button class="btn chico azul" id="btnExpPron">⬇️ Descargar (CSV)</button></div>
+    <div style="overflow:auto;max-height:420px"><table class="tabla-hist" id="tablaPron"></table></div></div>
+  <div class="panel"><h3>🗒️ Últimas lecturas</h3><div style="overflow:auto"><table class="tabla-hist" id="tablaHist"></table></div>
+    <div class="fila-btn"><button class="btn chico azul" id="btnExportar">⬇️ Descargar registro (CSV)</button></div></div>
+</section>
+
+</div>
+
+<!-- Cuenta regresiva -->
+<div class="cuenta" id="cuenta"><span id="cuentaNum">3</span></div>
+
+<!-- Modal resultado -->
+<div class="modal" id="mResultado"><div class="caja" id="cajaResultado"></div></div>
+<!-- Modal preguntas -->
+<div class="modal" id="mPreguntas"><div class="caja" id="cajaPreguntas"></div></div>
+<!-- Modal micrófono -->
+<div class="modal" id="mMic"><div class="caja" id="cajaMic"></div></div>
+<!-- Modal ajustes -->
+<div class="modal" id="mAjustes"><div class="caja">
+  <h2>⚙️ Ajustes</h2>
+  <div class="ajuste"><span>👤 Nombre</span><input type="text" id="ajNombre" maxlength="20" placeholder="(opcional)"></div>
+  <div class="ajuste"><span>🌈 Sílabas de colores <br><span class="ejemplo-sil"><span class="s0">ma</span><span class="s1">ri</span><span class="s0">po</span><span class="s1">sa</span></span></span><button class="interruptor" id="ajSil"></button></div>
+  <div class="ajuste"><span>🎯 Exigir pronunciación correcta<br><small style="color:#64748b">No avanza hasta que lea bien cada palabra</small></span><select id="ajExig"><option value="2">🔴 Muy exigente (pide voz clara)</option><option value="1">🟠 Exigente</option><option value="0">🟢 Normal (acepta parecidas)</option></select></div>
+  <div class="ajuste"><span>🔠 Tamaño de letra</span><input type="range" id="ajTam" min="26" max="70" step="2"></div>
+  <div class="ajuste"><span>🐦 Velocidad de Pico</span><input type="range" id="ajVel" min="0.55" max="1.2" step="0.05"></div>
+  <div class="ajuste"><span>🗣️ Voz</span><select id="ajVoz"></select></div>
+  <div class="fila-btn">
+    <button class="btn chico cian" id="ajProbar">🔊 Probar voz</button>
+    <button class="btn chico rosa" id="ajBorrar">🗑️ Borrar progreso</button>
+    <button class="btn chico verde" id="ajCerrar">✓ Listo</button>
+  </div>
+</div></div>
+
+<div class="burbuja-pico" id="burbuja"><div class="msg" id="burbujaMsg"></div></div>
+<canvas id="confeti"></canvas>
+
+<script>
+/* =====================================================
+   LEE Y VUELA — App de fluidez lectora para niños
+   ===================================================== */
+
+/* ---------------- DATOS ---------------- */
+const PALABRAS = {
+  1:{nombre:'Palabras cortas', emo:'🐣', desc:'2 sílabas: sapo, luna, mesa…', color:['#4ade80','#16a34a','#166534'], metas:[10,18,26],
+     lista:[['mamá','👩'],['papá','👨'],['sapo','🐸'],['pato','🦆'],['gato','🐱'],['luna','🌙'],['sopa','🍲'],['casa','🏠'],['dedo','👆'],['foca','🦭'],['nube','☁️'],['rana','🐸'],['vaca','🐄'],['lobo','🐺'],['nido','🪺'],['mano','✋'],['pino','🌲'],['rosa','🌹'],['taza','☕'],['bota','👢'],['cama','🛏️'],['loro','🦜'],['mono','🐒'],['pera','🍐'],['piña','🍍'],['dado','🎲'],['jugo','🧃'],['oso','🐻'],['uva','🍇'],['ojo','👁️'],['boca','👄'],['coco','🥥'],['vela','🕯️'],['foto','📷'],['bebé','👶'],['lupa','🔍'],['moto','🏍️'],['mesa','🪑'],['pala','⛏️'],['lata','🥫']]},
+  2:{nombre:'Palabras medianas', emo:'🐥', desc:'3 sílabas: pelota, conejo…', color:['#fbbf24','#f59e0b','#b45309'], metas:[8,15,22],
+     lista:[['paloma','🕊️'],['camisa','👕'],['pelota','⚽'],['tomate','🍅'],['conejo','🐰'],['zapato','👟'],['gusano','🐛'],['muñeca','🪆'],['maleta','🧳'],['cometa','🪁'],['galleta','🍪'],['tortuga','🐢'],['abeja','🐝'],['caballo','🐴'],['jirafa','🦒'],['ballena','🐳'],['gallina','🐔'],['cebolla','🧅'],['banana','🍌'],['sandía','🍉'],['paleta','🍭'],['cuchara','🥄'],['corona','👑'],['pepino','🥒'],['helado','🍦'],['camello','🐫'],['tijera','✂️'],['pirata','🏴‍☠️'],['payaso','🤡'],['regalo','🎁'],['cohete','🚀'],['manzana','🍎'],['lechuga','🥬'],['dinero','💰'],['gorila','🦍'],['ratones','🐭']]},
+  3:{nombre:'Palabras difíciles', emo:'🦅', desc:'Trabadas y largas: globo, estrella…', color:['#f472b6','#db2777','#9d174d'], metas:[6,12,18],
+     lista:[['plato','🍽️'],['globo','🎈'],['flor','🌸'],['brazo','💪'],['tren','🚂'],['dragón','🐉'],['fruta','🍓'],['grillo','🦗'],['blusa','👚'],['clavo','🔩'],['árbol','🌳'],['campana','🔔'],['estrella','⭐'],['bicicleta','🚲'],['cangrejo','🦀'],['plátano','🍌'],['tigre','🐯'],['cebra','🦓'],['libro','📖'],['trompeta','🎺'],['bruja','🧙'],['escoba','🧹'],['mariposa','🦋'],['elefante','🐘'],['pingüino','🐧'],['dinosaurio','🦕'],['cocodrilo','🐊'],['helicóptero','🚁'],['chocolate','🍫'],['tambor','🥁'],['princesa','👸'],['fresa','🍓'],['nieve','❄️'],['planeta','🪐'],['guitarra','🎸'],['cristal','💎']]}
+};
+
+const ESCALERAS = [
+  {t:'Mi gato', e:'🐱', p:['Mi gato.','Mi gato duerme.','Mi gato duerme en la cama.','Mi gato duerme en la cama de mamá.']},
+  {t:'El sol', e:'☀️', p:['El sol.','El sol sale.','El sol sale muy temprano.','El sol sale muy temprano en Mórrope.']},
+  {t:'La rana', e:'🐸', p:['La rana.','La rana salta.','La rana salta en el agua.','La rana verde salta en el agua fría.']},
+  {t:'Papá lee', e:'📚', p:['Papá lee.','Papá lee un libro.','Papá lee un libro de cuentos.','Papá lee un libro de cuentos a mi hermano.']},
+  {t:'El perro', e:'🐶', p:['El perro.','El perro corre.','El perro corre con la pelota.','El perro corre feliz con la pelota roja.']},
+  {t:'Yo como', e:'🍎', p:['Yo como.','Yo como fruta.','Yo como fruta en la mañana.','Yo como fruta dulce en la mañana.']},
+  {t:'La niña canta', e:'🎤', p:['La niña.','La niña canta.','La niña canta una canción.','La niña canta una canción con su abuela.']},
+  {t:'Un pájaro', e:'🐦', p:['Un pájaro.','Un pájaro vuela.','Un pájaro vuela muy alto.','Un pájaro azul vuela muy alto en el cielo.']},
+  {t:'El tren', e:'🚂', p:['El tren.','El tren pasa.','El tren pasa por el puente.','El tren largo pasa por el puente del río.']},
+  {t:'Mamá cocina', e:'🍲', p:['Mi mamá.','Mi mamá cocina.','Mi mamá cocina arroz con pato.','Mi mamá cocina un rico arroz con pato.']},
+  {t:'La luna', e:'🌙', p:['La luna.','La luna brilla.','La luna brilla en la noche.','La luna blanca brilla en la noche oscura.']},
+  {t:'Los niños', e:'⚽', p:['Los niños.','Los niños juegan.','Los niños juegan en el parque.','Los niños juegan fútbol en el parque del colegio.']}
+];
+
+const CONMIGO = [
+  {t:'El oso de Susi', e:'🧸', x:'Susi tiene un oso. El oso es de felpa. Susi ama a su oso.'},
+  {t:'La pera', e:'🍐', x:'Memo come una pera. La pera es dulce. ¡Qué rica pera!'},
+  {t:'Lalo pinta', e:'🎨', x:'Lalo pinta la casa. La casa es azul. Lalo pinta feliz.'},
+  {t:'El mono', e:'🐒', x:'El mono sube al árbol. Toma una banana. ¡El mono come y ríe!'},
+  {t:'La foca', e:'🦭', x:'La foca nada en el mar. Juega con una pelota. ¡Plas, plas, aplaude la foca!'},
+  {t:'Mi cometa', e:'🪁', x:'Tengo una cometa roja. El viento la sube alto. ¡Vuela, cometa, vuela!'},
+  {t:'El burro Pepe', e:'🐴', x:'Mi abuelo tiene un burro. El burro se llama Pepe. Pepe come pasto.'},
+  {t:'Ayudo en casa', e:'🍽️', x:'Ana lava los platos. Pepe seca las tazas. Juntos ayudan a mamá.'},
+  {t:'El pollito', e:'🐤', x:'El pollito dice pío, pío. Busca a su mamá gallina. ¡Ya la encontró!'},
+  {t:'Mi escuela', e:'🏫', x:'Mi escuela es grande. Tiene un patio y un jardín. Allí juego con mis amigos.'},
+  {t:'El algarrobo', e:'🌳', x:'El algarrobo da sombra. Debajo descansa una cabra. La cabra come algarrobas.'},
+  {t:'El mar', e:'🌊', x:'Vamos a la playa. El mar es grande y azul. Hago un castillo de arena.'}
+];
+
+const CUENTOS = [
+  {t:'El sapo Paco', e:'🐸', n:1, x:'Paco es un sapo verde. Vive en una laguna. Paco salta de una hoja a otra hoja. Un día, Paco vio una mosca. ¡Zas! Sacó su lengua larga. Paco se comió la mosca. Paco está feliz y salta otra vez.',
+   q:[['¿De qué color es Paco?',['verde','rojo','azul']],['¿Qué se comió Paco?',['una mosca','una hoja','un pez']]]},
+  {t:'Los zapatos de Lila', e:'👟', n:1, x:'Lila tiene zapatos nuevos. Son rosados y tienen luces. Cuando Lila salta, sus zapatos brillan. Lila salta en la sala. Lila salta en el patio. ¡Mira, mamá, mis zapatos brillan!',
+   q:[['¿De qué color son los zapatos?',['rosados','negros','verdes']],['¿Qué hacen los zapatos cuando Lila salta?',['brillan','cantan','vuelan']]]},
+  {t:'La pelota de Tito', e:'⚽', n:1, x:'Tito tiene una pelota roja. Tito patea la pelota. La pelota sube, sube y sube. ¡Cayó en el techo de la vecina! Tito está triste. La vecina sale y dice: Toma tu pelota, Tito. Tito sonríe y dice: ¡Gracias!',
+   q:[['¿De qué color es la pelota?',['roja','amarilla','azul']],['¿Dónde cayó la pelota?',['en el techo','en el río','en un árbol']]]},
+  {t:'Mimí y la luna', e:'🌙', n:1, x:'Mimí es una gata blanca. Cada noche mira la luna. Luna, ¿quieres jugar?, dice Mimí. La luna brilla y no contesta. Mimí se sube al techo. Desde allí la luna se ve más grande. Mimí se duerme bajo la luz de la luna.',
+   q:[['¿Cómo se llama la gata?',['Mimí','Lola','Susi']],['¿A dónde se sube Mimí?',['al techo','a la mesa','a un barco']]]},
+  {t:'El picaflor Pico', e:'🐦', n:2, x:'Pico es un picaflor pequeño y muy rápido. Sus alas se mueven tan rápido que hacen zum, zum. Pico visita las flores del jardín para tomar su néctar dulce. Un día encontró una flor nueva, amarilla y grande. ¡Qué hermosa flor!, dijo Pico. Tomó su néctar y voló feliz hasta su nido.',
+   q:[['¿Cómo es Pico?',['pequeño y rápido','grande y lento','gordo y dormilón']],['¿De qué color era la flor nueva?',['amarilla','morada','blanca']]]},
+  {t:'La tortuga y el caracol', e:'🐢', n:2, x:'La tortuga Tula y el caracol Coco hicieron una carrera. ¡Uno, dos, tres, ya!, gritó el loro. Tula caminó despacio. Coco avanzó más despacio todavía. Pasó una hora y nadie llegaba a la meta. Al final, los dos se rieron mucho. Mejor caminemos juntos, dijo Tula. Y así llegaron a la meta, felices.',
+   q:[['¿Quién gritó «ya»?',['el loro','el perro','la tortuga']],['¿Cómo llegaron a la meta?',['juntos y felices','peleando','llorando']]]},
+  {t:'El arroz con pato de la abuela', e:'🍲', n:2, x:'Los domingos, la abuela Rosa cocina arroz con pato. Toda la familia llega a su casa. Mi primo pela las cebollas y yo lavo el culantro. La cocina huele muy rico. Cuando el arroz está listo, todos nos sentamos a la mesa. ¡Buen provecho!, dice la abuela. Y todos comemos con alegría.',
+   q:[['¿Qué día cocina la abuela?',['el domingo','el lunes','el viernes']],['¿Qué lava el niño?',['el culantro','los platos','el carro']]]},
+  {t:'El burrito de Mórrope', e:'🐴', n:2, x:'En Mórrope vive un burrito llamado Lucero. Todas las mañanas lleva agua y leña para su dueño, don Julio. Un día, Lucero vio una mariposa de colores y la siguió por el campo. Se alejó tanto que se perdió. Entonces escuchó la voz de don Julio: ¡Lucero, ven! Lucero corrió hacia su casa y don Julio le dio una zanahoria.',
+   q:[['¿Cómo se llama el burrito?',['Lucero','Pepe','Coco']],['¿Qué siguió Lucero por el campo?',['una mariposa','un perro','una nube']]]},
+  {t:'El cumpleaños de Beto', e:'🎂', n:2, x:'Hoy es el cumpleaños de Beto. Cumple siete años. Su mamá preparó una torta de chocolate con siete velas. Sus amigos llegaron con globos y regalos. Jugaron a las escondidas y a la ronda. Luego cantaron feliz cumpleaños. Beto cerró los ojos, pidió un deseo y sopló las velas. ¡Fue un día muy feliz!',
+   q:[['¿Cuántos años cumple Beto?',['siete','cinco','diez']],['¿De qué era la torta?',['de chocolate','de fresa','de vainilla']]]},
+  {t:'La semilla mágica', e:'🌱', n:3, x:'Sofía encontró una semilla brillante en el patio de su escuela. La sembró en una maceta y la regó todos los días. Al tercer día salió una plantita verde. A la semana, la planta ya era más alta que Sofía. Un mes después, la planta dio flores que cambiaban de color: rojas en la mañana, amarillas en la tarde y azules en la noche. Todos los niños venían a verla. Sofía aprendió que, con paciencia y cuidado, las cosas pequeñas pueden crecer.',
+   q:[['¿Dónde encontró Sofía la semilla?',['en el patio de su escuela','en el mar','en una tienda']],['¿Qué aprendió Sofía?',['que con paciencia las cosas crecen','que las plantas hablan','que no hay que regar']]]},
+  {t:'El viaje de Gotita', e:'💧', n:3, x:'Gotita vivía en el mar con millones de amigas. Un día, el sol calentó el agua y Gotita subió al cielo convertida en vapor. Allí se juntó con otras gotas y formaron una nube gris. La nube viajó sobre los cerros hasta que se puso muy pesada. Entonces Gotita cayó como lluvia sobre un campo de arroz. Bajó por un río largo y, después de muchos días, volvió al mar. ¡Qué viaje tan increíble!, dijo Gotita.',
+   q:[['¿Qué calentó el agua del mar?',['el sol','el fuego','la luna']],['¿Sobre qué cayó Gotita?',['un campo de arroz','una piscina','un vaso']]]},
+  {t:'Chispa, el dragón diferente', e:'🐉', n:3, x:'Martina tenía un dragón pequeño llamado Chispa. Chispa no echaba fuego, sino burbujas de colores. Los otros dragones se burlaban de él. Una tarde, el pueblo se llenó de humo porque se quemaba un pajonal. Chispa sopló y sopló, y sus burbujas apagaron el fuego. Desde ese día, todos aplaudían a Chispa. Martina lo abrazó y le dijo: Ser diferente es tu mejor poder.',
+   q:[['¿Qué echaba Chispa por la boca?',['burbujas de colores','fuego','arena']],['¿Qué apagó Chispa con sus burbujas?',['un incendio','una vela','la luz']]]}
+];
+const METAS_PPM = {1:30, 2:45, 3:60};  // meta de palabras por minuto por nivel
+const STICKERS = ['🐣','🦋','🌈','🐬','🚀','🦄','🍭','🎈','🦖','🌻','🐙','🪐','👑','🐉','🌟','🏆','🦜','🎠','🧁','🦁'];
+const ELOGIOS = ['¡Excelente','¡Muy bien','¡Increíble','¡Genial','¡Bravo','¡Lo lograste','¡Fantástico'];
+
+/* ---------------- ESTADO ---------------- */
+const KEY = 'leeyvuela_v1';
+function porDefecto(){ return {nombre:'', silabas:true, tam:44, vel:0.85, estricto:true, exig:2, pron:{}, voz:'', estrellas:{}, comp:{}, historial:[], record:{}}; }
+function cargar(){ try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d) return Object.assign(porDefecto(), d); }catch(e){} return porDefecto(); }
+let E = cargar();
+if(E.exig===undefined) E.exig = E.estricto===false ? 0 : 2;
+E.estricto = E.exig>=1;
+function guardar(){ try{ localStorage.setItem(KEY, JSON.stringify(E)); }catch(e){} }
+function totalEstrellas(){ return Object.values(E.estrellas).reduce((a,b)=>a+b,0); }
+function ponerEstrellas(id,n){ if((E.estrellas[id]||0) < n) E.estrellas[id] = n; guardar(); refrescarContadores(); }
+function estrellasTxt(n){ return '⭐'.repeat(n) + '☆'.repeat(3-n); }
+
+/* ---------------- UTILIDADES DE TEXTO ---------------- */
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const espera = ms => new Promise(r => setTimeout(r, ms));
+const LETRA = 'A-Za-zÁÉÍÓÚÜÑáéíóúüñ';
+function mezclar(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* Separación en sílabas (español) */
+const VOC = 'aeiouáéíóúü';
+const FUERTES = 'aeoáéóíú';   // í, ú acentuadas forman hiato
+const GRUPOS = ['pr','br','tr','dr','cr','gr','fr','kr','pl','bl','cl','gl','fl','kl'];
+function silabear(pal){
+  const low = pal.toLowerCase(), n = low.length, u = [];
+  for(let i=0;i<n;){
+    const c = low[i], d = low[i+1] || '';
+    if((c==='c'&&d==='h')||(c==='l'&&d==='l')||(c==='r'&&d==='r')){ u.push({t:'C',s:i,e:i+2,x:c+d}); i+=2; continue; }
+    if((c==='q'||c==='g') && d==='u' && 'eéií'.includes(low[i+2]||'#')){ u.push({t:'C',s:i,e:i+2,x:c}); i+=2; continue; }
+    if(c==='y'){
+      const prevV = i>0 && VOC.includes(low[i-1]);
+      const nextV = VOC.includes(d);
+      if((prevV && !nextV) || n===1){ u.push({t:'V',s:i,e:i+1,x:'i'}); i++; continue; }
+    }
+    u.push({t: VOC.includes(c)?'V':'C', s:i, e:i+1, x:c}); i++;
+  }
+  // núcleos vocálicos
+  const nuc = [];
+  for(let k=0;k<u.length;k++){
+    if(u[k].t!=='V') continue;
+    if(nuc.length && nuc[nuc.length-1][1]===k-1){
+      const a = u[k-1].x, b = u[k].x;
+      if(FUERTES.includes(a) && FUERTES.includes(b)) nuc.push([k,k]);
+      else nuc[nuc.length-1][1] = k;
+    } else nuc.push([k,k]);
+  }
+  if(nuc.length<2) return [pal];
+  const cortes = [];
+  for(let j=0;j<nuc.length-1;j++){
+    const a = nuc[j][1]+1, b = nuc[j+1][0]-1, m = b-a+1;
+    if(m<=0) cortes.push(nuc[j+1][0]);
+    else if(m===1) cortes.push(a);
+    else if(m===2) cortes.push(GRUPOS.includes(u[a].x+u[a+1].x) ? a : a+1);
+    else if(m===3) cortes.push(GRUPOS.includes(u[a+1].x+u[a+2].x) ? a+1 : a+2);
+    else cortes.push(a+2);
+  }
+  const res = []; let ini = 0;
+  cortes.forEach(c => { const pos = u[c].s; res.push(pal.slice(ini,pos)); ini = pos; });
+  res.push(pal.slice(ini));
+  return res.filter(Boolean);
+}
+
+/* Normalización y comparación "fonética" para el reconocimiento de voz */
+const NUM = {'0':'cero','1':'uno','2':'dos','3':'tres','4':'cuatro','5':'cinco','6':'seis','7':'siete','8':'ocho','9':'nueve','10':'diez','11':'once','12':'doce','15':'quince','20':'veinte','100':'cien'};
+// norm: minúsculas SIN tildes pero CONSERVA ñ y ü (piña ≠ pina, pingüino ≠ pinguino)
+function norm(s){
+  return s.normalize('NFC').toLowerCase().replace(/ñ/g,'\u0001').replace(/ü/g,'\u0002')
+    .normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\u0001/g,'ñ').replace(/\u0002/g,'ü').replace(/[^a-z0-9ñü]/g,'');
+}
+// normA: además CONSERVA las tildes (papa ≠ papá)
+function normA(s){ return s.normalize('NFC').toLowerCase().replace(/[^a-z0-9ñüáéíóú]/g,''); }
+// fon: solo junta letras que en el Perú SUENAN IGUAL (b/v, s/z/c, ll/y, h muda, c/qu/k)
+function fon(n){
+  if(NUM[n]) n = NUM[n];
+  if(n==='un'||n==='una') n='uno';
+  return n.replace(/ü/g,'w').replace(/ch/g,'§').replace(/h/g,'').replace(/v/g,'b').replace(/z/g,'s')
+    .replace(/c([eéií])/g,'s$1').replace(/g([eéií])/g,'j$1').replace(/gu([eéií])/g,'g$1').replace(/qu/g,'k')
+    .replace(/c/g,'k').replace(/ll/g,'y').replace(/x/g,'ks').replace(/y$/,'i');
+}
+// palabras en las que el reconocedor de voz suele omitir la tilde aunque se pronuncien bien
+const SIN_TILDE = new Set(['qué','cómo','cuándo','dónde','quién','quiénes','cuál','cuáles','cuánto','cuántos','cuánta','cuántas','él','tú','mí','sí','más','sé','té','dé','aún','sólo','solo']);
+// clave para comparar en modo exigente
+function objetivo(texto){
+  const plano = norm(texto), con = normA(texto);
+  const libre = SIN_TILDE.has(con) || /^[A-ZÁÉÍÓÚÑ]/.test(texto.replace(/^[^A-Za-zÁÉÍÓÚÑáéíóúñü]+/,'')); // nombres propios
+  return {f:fon(plano), kA:fon(con), libre};
+}
+function igual(tok, t){ return tok.kA===t.kA || (t.libre && tok.f===t.f); }
+function lev(a,b){
+  if(a===b) return 0; const m=a.length, n=b.length; if(!m) return n; if(!n) return m;
+  let prev = Array.from({length:n+1},(_,i)=>i);
+  for(let i=1;i<=m;i++){ const cur=[i]; for(let j=1;j<=n;j++) cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1)); prev=cur; }
+  return prev[n];
+}
+function coincide(h,t){
+  if(h===t) return true;
+  const tol = t.length>=7 ? 2 : (t.length>=4 ? 1 : 0);
+  return tol>0 && Math.abs(h.length-t.length)<=tol && lev(h,t)<=tol;
+}
+function tokens(txt){ return txt.split(/\s+/).map(norm).filter(Boolean).map(fon); }
+
+/* Alinea lo escuchado con el texto */
+function alinear(pal, oido){
+  const T = pal.map(p=>p.fon);
+  const est = new Array(T.length).fill(0); let p = 0;
+  for(const h of oido){
+    if(p>=T.length) break;
+    for(let k=0;k<4 && p+k<T.length;k++){
+      if(coincide(h,T[p+k])){
+        for(let s=p;s<p+k;s++) est[s] = T[s].length<=2 ? 1 : 2; // palabras muy cortas: se perdonan
+        est[p+k]=1; p=p+k+1; break;
+      }
+      if(k===0 && p+1<T.length && h===T[p]+T[p+1]){ est[p]=1; est[p+1]=1; p+=2; break; }
+    }
+  }
+  return {p, est};
+}
+
+/* Alineación ESTRICTA: solo resultados FINALES del reconocedor y coincidencia exacta.
+   No avanza hasta que la palabra actual se pronuncie bien. */
+const MIN_CONF = ()=> E.exig>=2 ? 0.6 : 0;   // "muy exigente": además pide voz clara
+function tokFinales(res){
+  const out=[];
+  (res||[]).forEach((x,ri)=>{ if(!x.fin) return; const rid = Math.random(); x.t.split(/\s+/).forEach(raw=>{ const n=norm(raw); if(n) out.push({raw, f:fon(n), kA:fon(normA(raw)), c:x.c, rid}); }); });
+  return out;
+}
+function limpia(w){ return w.replace(new RegExp('[^'+LETRA+']','g'),''); }
+function alinearEstricto(pal, oido){
+  const T = pal.map(p=>p.obj), n = T.length, minC = MIN_CONF();
+  const est = new Array(n).fill(0), err = new Array(n).fill(0), dijo = T.map(()=>[]); let p = 0;
+  let saltar = null;
+  for(const tok of oido){
+    if(p>=n) break;
+    if(saltar!==null && tok.rid===saltar) continue;   // frase poco clara: se repite completa
+    const claro = !(minC && tok.c>0 && tok.c<minC);
+    if(igual(tok,T[p])){
+      if(claro){ est[p] = err[p] ? 3 : 1; p++; }
+      else { err[p]++; dijo[p].push(tok.raw+' (no se oyó claro)'); saltar = tok.rid; }
+      continue;
+    }
+    // la «y», «a», «o» sueltas: a veces el reconocedor no las escribe
+    if(T[p].f.length===1 && p+1<n && igual(tok,T[p+1]) && claro){ est[p]=1; est[p+1]=err[p+1]?3:1; p+=2; continue; }
+    if(p+1<n && tok.kA===T[p].kA+T[p+1].kA && claro){ est[p]=err[p]?3:1; est[p+1]=1; p+=2; continue; }
+    // repetir la palabra que acaba de leer no es error
+    if(p>0 && igual(tok,T[p-1])) continue;
+    err[p]++; dijo[p].push(tok.raw);
+  }
+  return {p, est, err, dijo};
+}
+
+/* ---------- HISTORIAL DE PRONUNCIACIÓN ---------- */
+function registrarPron(palabra, bien, malOidos){
+  const w = limpia(palabra).toLowerCase(); if(!w) return;
+  const k = norm(w);
+  const r = E.pron[k] || (E.pron[k] = {w, bien:0, mal:0, oidos:[], f:0});
+  if(bien) r.bien++;
+  (malOidos||[]).forEach(o=>{ r.mal++; r.oidos.push(o); });
+  r.oidos = r.oidos.slice(-6); r.f = Date.now();
+}
+function registrarSesionLectura(S){
+  if(!S || S.registrado || (S.modo!=='mic' && S.modo!=='profe')) return null;
+  S.registrado = true;
+  const L = S.L, errores = []; let mal = 0;
+  if(S.modo==='profe'){
+    L.palabras.forEach(p=>{ const m = p.el.classList.contains('mal');
+      registrarPron(p.texto, !m, m?['(marcada por profe)']:[]); if(m){ mal++; errores.push({w:limpia(p.texto), o:'marcada por profe', n:1}); } });
+  } else {
+    const r = S.mejor; if(!r || !r.dijo) return {mal:0, errores:[]};
+    L.palabras.forEach((p,i)=>{
+      const leida = r.est[i]===1 || r.est[i]===3, oidos = r.dijo[i]||[];
+      if(leida || oidos.length) registrarPron(p.texto, leida, oidos);
+      if(oidos.length){ mal += oidos.length; errores.push({w:limpia(p.texto), o:oidos.join(', '), n:oidos.length}); }
+    });
+  }
+  guardar();
+  return {mal, errores};
+}
+
+/* ---------------- CANTIDADES BIEN DICHAS ---------------- */
+// cant(1,'palabra','palabras') -> "una palabra" ; cant(5,...) -> "5 palabras" ; cant(0,...) -> "ninguna palabra"
+function cant(n, sing, plur, fem=true){
+  if(n===0) return (fem?'ninguna ':'ningún ') + sing;
+  if(n===1) return (fem?'una ':'un ') + sing;
+  return n + ' ' + plur;
+}
+function pl(n, sing, plur){ return n===1 ? sing : plur; }
+
+/* ---------------- VOZ (Pico habla) ---------------- */
+let VOZ = null;
+const tieneTTS = 'speechSynthesis' in window;
+function vocesEs(){ return tieneTTS ? speechSynthesis.getVoices().filter(v=>/^es/i.test(v.lang)) : []; }
+function elegirVoz(){
+  const vs = vocesEs(); if(!vs.length){ VOZ=null; return; }
+  if(E.voz){ const f = vs.find(v=>v.name===E.voz); if(f){ VOZ=f; return; } }
+  const orden = ['es-PE','es-419','es-MX','es-US','es-CO','es-AR','es-CL','es-ES'];
+  const punt = v => { let s = 0; const i = orden.findIndex(o=>v.lang.replace('_','-').toLowerCase()===o.toLowerCase()); s += i<0 ? 0 : (20-i);
+    if(/natural|online|google|neural/i.test(v.name)) s+=15; return s; };
+  VOZ = vs.slice().sort((a,b)=>punt(b)-punt(a))[0];
+}
+if(tieneTTS){ elegirVoz(); speechSynthesis.onvoiceschanged = ()=>{ elegirVoz(); llenarVoces(); }; }
+function utter(t, rate){ const u = new SpeechSynthesisUtterance(t); u.lang = VOZ ? VOZ.lang : 'es-PE'; if(VOZ) u.voice = VOZ; u.rate = rate; u.pitch = 1.05; return u; }
+let tokenVoz = 0;
+function decir(t, rate=0.95){
+  return new Promise(res=>{
+    if(!tieneTTS){ res(); return; }
+    speechSynthesis.cancel();
+    const u = utter(t, rate); let hecho=false; silenciar(true);
+    const fin=()=>{ if(!hecho){ hecho=true; silenciar(false); res(); } };
+    u.onend=fin; u.onerror=fin; speechSynthesis.speak(u); setTimeout(fin, 1500 + t.length*160/rate);
+  });
+}
+function callar(){ tokenVoz++; if(tieneTTS) speechSynthesis.cancel(); }
+function durPalabra(w){ return silabear(w.replace(new RegExp('[^'+LETRA+']','g'),'')||'a').length*215 + (/[,;:]$/.test(w)?280:60); }
+
+/* Pico lee en voz alta iluminando cada palabra */
+async function picoLee(L, indices){
+  callar(); const tk = ++tokenVoz;
+  const grupos = []; let g = [];
+  indices.forEach(i=>{ g.push(i); if(/[.!?…]/.test(L.palabras[i].texto)){ grupos.push(g); g=[]; } });
+  if(g.length) grupos.push(g);
+  for(const gr of grupos){
+    if(tk!==tokenVoz) return;
+    await decirResaltando(L, gr, tk);
+    await espera(220);
+  }
+  quitarClase(L,'pico-lee');
+}
+function decirResaltando(L, g, tk){
+  return new Promise(res=>{
+    if(!tieneTTS){ res(); return; }
+    let txt=''; const offs=[];
+    g.forEach(i=>{ offs.push(txt.length); txt += L.palabras[i].texto + ' '; });
+    txt = txt.trim();
+    const vel = E.vel, u = utter(txt, vel);
+    let bnd=false, timers=[], fin=false;
+    const marcar = k => { if(tk!==tokenVoz) return; quitarClase(L,'pico-lee'); L.palabras[g[k]].el.classList.add('pico-lee'); };
+    u.onstart = ()=>{ let t=0; g.forEach((i,k)=>{ timers.push(setTimeout(()=>{ if(!bnd) marcar(k); }, t)); t += durPalabra(L.palabras[i].texto)/vel; }); };
+    u.onboundary = e => { if(e.name && e.name!=='word') return; bnd=true; timers.forEach(clearTimeout); let k=0; for(let j=0;j<offs.length;j++) if(offs[j]<=e.charIndex) k=j; marcar(k); };
+    silenciar(true);
+    const terminar = ()=>{ if(fin) return; fin=true; timers.forEach(clearTimeout); silenciar(false); res(); };
+    u.onend = terminar; u.onerror = terminar;
+    speechSynthesis.speak(u);
+    setTimeout(terminar, 2500 + txt.length*170/vel);
+  });
+}
+
+/* ---------------- OÍDO (reconocimiento de voz) ---------------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+/* El micrófono se pide UNA sola vez y queda abierto. El reconocimiento sigue corriendo
+   todo el tiempo; las pantallas solo «se conectan» o «se desconectan» de él.
+   Mientras Pico habla, lo que se oye se descarta (para no confundir su voz con la del niño). */
+const Oido = {
+  ok: !!SR, rec:null, corriendo:false, encendido:false, negado:false, sid:0, gen:0,
+  cb:null, alNegar:null, alCambiar:null, stream:null, silencio:false, ign:new Set(), base:0, nres:0, avisado:false,
+  errGum:'',
+  async permiso(){
+    if(this.stream && this.stream.getAudioTracks().some(t=>t.readyState==='live')) return true;
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ this.errGum='NoMedia'; return false; }
+    try{ this.stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true}}); this.errGum=''; return true; }
+    catch(e){ this.stream=null; this.errGum = e.name||'Error'; return false; }
+  },
+  iniciar(cb, alNegar){
+    if(!this.ok) return;
+    this.cb = cb; this.alNegar = alNegar; this.gen++; this.base = this.nres;
+    this.negado = false; this.avisado = false;   // siempre se vuelve a intentar
+    this.alCambiar && this.alCambiar(true);
+    if(!this.encendido){ this.encendido = true; this.permiso().then(()=>{ if(!this.corriendo) this._abrir(); }); }
+    else if(!this.corriendo) this._abrir();
+  },
+  _abrir(){
+    let r; try{ r = new SR(); }catch(e){ return; }
+    r.lang = 'es-PE'; r.continuous = true; r.interimResults = true; r.maxAlternatives = 1;
+    const sid = ++this.sid; this.nres = 0; this.base = 0; this.ign = new Set();
+    r.onresult = e => {
+      if(sid!==this.sid) return;
+      this.nres = e.results.length;
+      if(this.silencio){ for(let i=e.resultIndex;i<e.results.length;i++) this.ign.add(i); return; }
+      if(!this.cb) return;
+      let t=''; const res=[];
+      for(let i=this.base;i<e.results.length;i++){
+        if(this.ign.has(i)) continue;
+        const a = e.results[i][0]; t += ' ' + a.transcript;
+        res.push({t:a.transcript, fin:e.results[i].isFinal, c:a.confidence||0});
+      }
+      if(!res.length) return;
+      this.cb(t, sid+'-'+this.gen, res[res.length-1].fin, res);
+    };
+    r.onerror = e => {
+      if(e.error==='not-allowed' || e.error==='service-not-allowed' || e.error==='audio-capture'){
+        this.negado = true; this.encendido = false; this.corriendo = false; this.alCambiar && this.alCambiar(false);
+        if(e.error==='audio-capture' && this.stream){ try{ this.stream.getTracks().forEach(t=>t.stop()); }catch(_){} this.stream=null; }
+        if(!this.avisado){ this.avisado = true; const f = this.alNegar; this.cb = null; f ? f(e.error) : mostrarAyudaMic(tipoErrorMic(e.error)); }
+      }
+    };
+    r.onstart = () => { this.corriendo = true; };
+    r.onend = () => {
+      this.corriendo = false;
+      if(this.encendido && !this.negado) setTimeout(()=>{ if(this.encendido && !this.corriendo) this._abrir(); }, 80);
+    };
+    try{ r.start(); this.rec = r; this.corriendo = true; }catch(e){}
+  },
+  // la pantalla deja de escuchar, pero el micrófono sigue listo (no se vuelve a pedir permiso)
+  parar(){ this.cb = null; this.gen++; this.alCambiar && this.alCambiar(false); }
+};
+/* ---------- PERMISO DEL MICRÓFONO ---------- */
+function tipoErrorMic(err){
+  if(err==='audio-capture' || err==='NotFoundError' || err==='NotReadableError' || err==='OverconstrainedError') return 'sin-micro';
+  if(err==='NoMedia') return 'inseguro';
+  return 'denegado';
+}
+function micBloqueadoPorMarco(){
+  try{
+    const pp = document.permissionsPolicy || document.featurePolicy;
+    if(pp && pp.allowsFeature && !pp.allowsFeature('microphone')) return true;
+  }catch(e){}
+  return false;
+}
+async function estadoPermisoMic(){
+  try{ const st = await navigator.permissions.query({name:'microphone'}); return st.state; }catch(e){ return 'desconocido'; }
+}
+// Se llama cuando el niño toca un botón para leer. Devuelve true si el micrófono está listo.
+async function asegurarMic(){
+  if(!Oido.ok){ mostrarAyudaMic('sin-soporte'); return false; }
+  if(micBloqueadoPorMarco()){ mostrarAyudaMic('marco'); return false; }
+  if(!window.isSecureContext && location.protocol!=='file:'){ mostrarAyudaMic('inseguro'); return false; }
+  if(await estadoPermisoMic()==='denied'){ mostrarAyudaMic('denegado'); return false; }
+  const ok = await Oido.permiso();          // aquí el navegador muestra «Permitir micrófono»
+  if(!ok){ mostrarAyudaMic(tipoErrorMic(Oido.errGum)); return false; }
+  cerrarAyudaMic();
+  return true;
+}
+let reintentoMic = null;
+function mostrarAyudaMic(tipo, alReintentar){
+  if(alReintentar) reintentoMic = alReintentar;
+  const navegador = /Edg\//.test(navigator.userAgent) ? 'Edge' : 'Chrome';
+  const local = location.protocol==='file:';
+  let titulo, cuerpo, botones = '';
+  if(tipo==='denegado'){
+    titulo = '🎤 Hay que dar permiso al micrófono';
+    cuerpo = `<p style="font-size:18px">Para que Pico escuche cómo lees, ${navegador} necesita permiso para usar el micrófono:</p>
+      <div class="pasos-mic">
+        <div><b class="n">1</b><span>Arriba, a la <b>izquierda de la dirección</b> de la página, haz clic en el candado o en el ícono de ajustes:<br><span class="barra-dir">🔒 ${local?'Archivo':'https://…'}</span> o <span class="barra-dir">🎤🚫</span></span></div>
+        <div><b class="n">2</b><span>Busca <b>Micrófono</b> y elige <b>Permitir</b>.</span></div>
+        <div><b class="n">3</b><span>Toca el botón <b>«Ya lo activé»</b> de aquí abajo.</span></div>
+      </div>
+      ${local?'<p style="font-size:15px;color:#9a3412;background:#fff7ed;border-radius:12px;padding:8px 12px">💡 Abriste la app como archivo de la computadora. Si el navegador no guarda el permiso, súbela a una página web (https) y el permiso quedará guardado para siempre.</p>':''}`;
+    botones = `<button class="btn verde" id="micReintentar">✅ Ya lo activé</button><button class="btn blanco" id="micRecargar">🔄 Recargar página</button>`;
+  } else if(tipo==='marco'){
+    titulo = '🎤 Abre la app en su propia ventana';
+    cuerpo = `<p style="font-size:18px">La app está dentro de otra página (por ejemplo Google Sites o la plataforma), y esa página no deja usar el micrófono.</p>
+      <div class="pasos-mic"><div><b class="n">1</b><span>Toca <b>«Abrir en ventana nueva»</b>.</span></div><div><b class="n">2</b><span>En la ventana nueva, cuando el navegador pregunte, elige <b>Permitir</b> micrófono.</span></div></div>`;
+    botones = `<button class="btn naranja" id="micVentana">↗ Abrir en ventana nueva</button>`;
+  } else if(tipo==='sin-micro'){
+    titulo = '🎤 No encuentro el micrófono';
+    cuerpo = `<div class="pasos-mic">
+      <div><b class="n">1</b><span>Revisa que el micrófono o los audífonos con micrófono estén <b>conectados</b>.</span></div>
+      <div><b class="n">2</b><span>Cierra otras apps que lo estén usando (Zoom, Meet, WhatsApp…).</span></div>
+      <div><b class="n">3</b><span>Toca <b>«Intentar otra vez»</b>.</span></div></div>`;
+    botones = `<button class="btn verde" id="micReintentar">🎤 Intentar otra vez</button>`;
+  } else if(tipo==='inseguro'){
+    titulo = '🎤 La página no es segura';
+    cuerpo = `<p style="font-size:18px">El navegador solo permite el micrófono en páginas que empiezan con <b>https://</b>. Abre la app desde un enlace https (por ejemplo GitHub Pages) o directamente como archivo.</p>`;
+  } else {
+    titulo = '🎤 Este navegador no puede escuchar';
+    cuerpo = `<p style="font-size:18px">Para que Pico escuche la lectura, abre la app en <b>Google Chrome</b> o <b>Microsoft Edge</b> (en computadora o en celular Android).</p>`;
+  }
+  $('#cajaMic').innerHTML = `<h2>${titulo}</h2>${cuerpo}
+    <div class="fila-btn">${botones}<button class="btn blanco" id="micCerrar">✖ Cerrar</button></div>`;
+  $('#mMic').classList.add('on');
+  const b = id => document.getElementById(id);
+  if(b('micReintentar')) b('micReintentar').onclick = async ()=>{ if(await asegurarMic()){ const f = reintentoMic; reintentoMic = null; f && f(); } };
+  if(b('micRecargar')) b('micRecargar').onclick = ()=> location.reload();
+  if(b('micVentana')) b('micVentana').onclick = abrirVentanaNueva;
+  b('micCerrar').onclick = ()=>{ cerrarAyudaMic(); reintentoMic = null; };
+  // si el permiso cambia a «permitido», se cierra solo y sigue
+  try{ navigator.permissions.query({name:'microphone'}).then(st=>{ st.onchange = ()=>{ if(st.state==='granted' && $('#mMic').classList.contains('on')){ cerrarAyudaMic(); const f = reintentoMic; reintentoMic = null; f && f(); } }; }); }catch(e){}
+}
+function cerrarAyudaMic(){ $('#mMic').classList.remove('on'); }
+
+/* Pico habla -> el oído ignora lo que escucha (y medio segundo después) */
+let hablandoN = 0, tSil = null;
+function silenciar(on){
+  if(on){ hablandoN++; clearTimeout(tSil); Oido.silencio = true; }
+  else { hablandoN = Math.max(0, hablandoN-1); if(!hablandoN){ clearTimeout(tSil); tSil = setTimeout(()=>{ if(!hablandoN) Oido.silencio = false; }, 500); } }
+}
+
+/* ---------------- SONIDOS Y EFECTOS ---------------- */
+let AC = null;
+function tono(f, d=0.12, tipo='sine', vol=0.15, retraso=0){
+  try{
+    AC = AC || new (window.AudioContext||window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime + retraso;
+    o.type=tipo; o.frequency.value=f; g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+d);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+d+0.02);
+  }catch(e){}
+}
+const sonidoBien = ()=>{ tono(880,.1,'triangle'); tono(1320,.14,'triangle',.12,.08); };
+const sonidoEscalon = ()=>{ [523,659,784].forEach((f,i)=>tono(f,.15,'triangle',.13,i*.08)); };
+const sonidoFanfarria = ()=>{ [523,659,784,1047,784,1047].forEach((f,i)=>tono(f,.22,'triangle',.14,i*.12)); };
+
+const cv = $('#confeti'), cx = cv.getContext('2d'); let parts = [], animando=false;
+function tamCanvas(){ cv.width = innerWidth; cv.height = innerHeight; }
+addEventListener('resize', tamCanvas); tamCanvas();
+function confeti(n=140){
+  const cols=['#f43f5e','#facc15','#22c55e','#3b82f6','#a855f7','#fb923c','#06b6d4'];
+  for(let i=0;i<n;i++) parts.push({x:innerWidth/2+(Math.random()-.5)*200,y:innerHeight*.35,vx:(Math.random()-.5)*14,vy:-Math.random()*14-4,r:Math.random()*7+4,c:cols[i%cols.length],a:Math.random()*6,va:(Math.random()-.5)*.4,v:1});
+  if(!animando){ animando=true; requestAnimationFrame(pasoConfeti); }
+}
+function pasoConfeti(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  parts.forEach(p=>{ p.vy+=.35; p.x+=p.vx; p.y+=p.vy; p.a+=p.va; p.vx*=.99; p.v-=.006;
+    cx.save(); cx.globalAlpha=Math.max(0,p.v); cx.translate(p.x,p.y); cx.rotate(p.a); cx.fillStyle=p.c; cx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); cx.restore(); });
+  parts = parts.filter(p=>p.v>0 && p.y<innerHeight+40);
+  if(parts.length) requestAnimationFrame(pasoConfeti); else { animando=false; cx.clearRect(0,0,cv.width,cv.height); }
+}
+
+/* Burbuja de Pico */
+let tBurbuja;
+function picoDice(msg, hablar=true){
+  const m = $('#burbujaMsg'); m.textContent = msg; m.classList.add('on');
+  clearTimeout(tBurbuja); tBurbuja = setTimeout(()=>m.classList.remove('on'), 4200);
+  if(hablar) decir(msg.replace(/[^\p{L}\p{N}\s¡!¿?,.]/gu,''), 0.95);
+}
+function nombreTxt(){ return E.nombre ? ', ' + E.nombre : ''; }
+
+/* ---------------- NAVEGACIÓN ---------------- */
+let pantallaActual = 'inicio';
+function ir(p){
+  detenerTodo();
+  $$('.pantalla').forEach(s=>s.classList.remove('activa'));
+  $('#p-'+p).classList.add('activa'); pantallaActual = p;
+  scrollTo({top:0,behavior:'smooth'});
+  if(p==='menu') pintarMenu();
+  if(p==='palabras') pintarNiveles();
+  if(p==='escaleras') pintarLista('escaleras');
+  if(p==='conmigo') pintarLista('conmigo');
+  if(p==='cuentos') pintarLista('cuentos');
+  if(p==='logros') pintarLogros();
+}
+document.addEventListener('click', e=>{ const b = e.target.closest('[data-ir]'); if(b) ir(b.dataset.ir); });
+function detenerTodo(){
+  Oido.parar(); callar();
+  if(lectura && !lectura.fin) registrarSesionLectura(lectura);
+  clearInterval(relojLectura); clearInterval(relojPal);
+  juegoPal = null; lectura = null;
+  $('#palJuego').classList.remove('on'); $('#palNiveles').style.display='';
+}
+function refrescarContadores(){ const t = totalEstrellas(); $$('.totEst').forEach(s=>s.textContent=t); }
+
+/* ---------------- INICIO / MENÚ ---------------- */
+function ponerPico(cont){ cont.innerHTML=''; cont.appendChild($('#tplPico').content.cloneNode(true)); }
+function pintarMenu(){
+  $('#saludoTxt').textContent = E.nombre ? `¡Hola, ${E.nombre}! ¿Qué leemos hoy? 📚` : '¡Hola! ¿Qué leemos hoy? 📚';
+}
+$('#btnEmpezar').onclick = ()=>{
+  const n = $('#inNombre').value.trim();
+  E.nombre = n ? n.charAt(0).toUpperCase()+n.slice(1) : E.nombre;
+  if(!n && !E.nombre) E.nombre='';
+  guardar(); ir('menu');
+  if(Oido.ok) asegurarMic();   // se pide aquí; si está bloqueado, se explica cómo activarlo
+  picoDice(E.nombre ? `¡Hola, ${E.nombre}! Soy Pico. ¡Vamos a leer volando!` : '¡Hola! Soy Pico. ¡Vamos a leer volando!');
+};
+$('#inNombre').addEventListener('keydown', e=>{ if(e.key==='Enter') $('#btnEmpezar').click(); });
+
+/* ---------------- LISTAS ---------------- */
+let filtroNivel = 0;
+function pintarLista(tipo){
+  if(tipo==='escaleras'){
+    $('#listaEscaleras').innerHTML = ESCALERAS.map((x,i)=>`<button class="tarjeta" data-abrir="esc:${i}"><div class="emo">${x.e}</div><h4>${esc(x.t)}</h4><div class="estrellas">${estrellasTxt(E.estrellas['esc-'+i]||0)}</div></button>`).join('');
+  } else if(tipo==='conmigo'){
+    $('#listaConmigo').innerHTML = CONMIGO.map((x,i)=>`<button class="tarjeta" data-abrir="con:${i}"><div class="emo">${x.e}</div><h4>${esc(x.t)}</h4><div class="estrellas">${estrellasTxt(E.estrellas['con-'+i]||0)}</div></button>`).join('');
+  } else {
+    const f = [['Todos',0],['🐣 Nivel 1',1],['🐥 Nivel 2',2],['🦅 Nivel 3',3]];
+    $('#filtrosCuentos').innerHTML = f.map(([t,v])=>`<button class="btn chico ${filtroNivel===v?'naranja':'blanco'}" data-filtro="${v}">${t}</button>`).join('');
+    $('#listaCuentos').innerHTML = CUENTOS.map((x,i)=>({x,i})).filter(o=>!filtroNivel||o.x.n===filtroNivel).map(({x,i})=>
+      `<button class="tarjeta" data-abrir="cue:${i}"><div class="emo">${x.e}</div><h4>${esc(x.t)}</h4>
+       <div class="estrellas">${estrellasTxt(E.estrellas['cue-'+i]||0)}${E.comp['cue-'+i]===x.q.length?' 🧠':''}</div>
+       <span class="chip n${x.n}">Nivel ${x.n} · ${contarPalabras(x.x)} palabras</span></button>`).join('');
+  }
+}
+function contarPalabras(t){ return t.split(/\s+/).filter(w=>norm(w)).length; }
+document.addEventListener('click', e=>{
+  const f = e.target.closest('[data-filtro]'); if(f){ filtroNivel=+f.dataset.filtro; pintarLista('cuentos'); return; }
+  const a = e.target.closest('[data-abrir]'); if(a){ const [t,i]=a.dataset.abrir.split(':'); abrirLectura(t,+i); }
+});
+
+/* ---------------- LECTOR (texto con palabras) ---------------- */
+function htmlSilabas(tok){
+  const m = tok.match(new RegExp('^([^'+LETRA+']*)(.*?)([^'+LETRA+']*)$'));
+  const a=m[1], core=m[2], z=m[3];
+  const sils = new RegExp('^['+LETRA+']+$').test(core) ? silabear(core) : [core];
+  return esc(a) + sils.map((s,k)=>`<span class="sil s${k%2}">${esc(s)}</span>`).join('') + esc(z);
+}
+function construirLector(cont, texto, revelar=false){
+  cont.innerHTML=''; cont.classList.toggle('escalera', revelar);
+  const palabras=[], lineas=[];
+  texto.split('\n').forEach((lin,li)=>{
+    const d = document.createElement('div'); d.className='linea';
+    if(revelar){ d.style.setProperty('--esc', li*0.6); if(li>0) d.classList.add('oculta'); }
+    lin.split(/(\s+)/).forEach(parte=>{
+      if(!parte) return;
+      if(/^\s+$/.test(parte)){ d.appendChild(document.createTextNode(' ')); return; }
+      const n = norm(parte);
+      if(!n){ const s=document.createElement('span'); s.className='punt'; s.textContent=parte; d.appendChild(s); return; }
+      const sp = document.createElement('span'); sp.className='w'; sp.dataset.i = palabras.length;
+      sp.innerHTML = htmlSilabas(parte); d.appendChild(sp);
+      palabras.push(Object.assign({el:sp, norm:n, fon:fon(n), linea:li, texto:parte}, {obj:objetivo(parte)}));
+    });
+    cont.appendChild(d); lineas.push(d);
+  });
+  return {palabras, lineas, revelar, visibles: revelar?1:lineas.length};
+}
+function quitarClase(L,c){ L.palabras.forEach(p=>p.el.classList.remove(c)); }
+function revelarHasta(L, linea){
+  if(!L.revelar) return;
+  while(L.visibles <= linea && L.visibles < L.lineas.length){
+    const d = L.lineas[L.visibles]; d.classList.remove('oculta'); d.classList.add('aparece'); L.visibles++;
+    sonidoEscalon();
+  }
+}
+function indicesVisibles(L){ return L.palabras.map((p,i)=>i).filter(i=>L.palabras[i].linea < L.visibles); }
+
+/* ---------------- PANTALLA DE LECTURA ---------------- */
+let lectura = null, relojLectura = null;
+function abrirLectura(tipo, i){
+  ir('lectura');
+  let item, texto, revelar=false, instr, id, nivel;
+  if(tipo==='esc'){ item=ESCALERAS[i]; texto=item.p.join('\n'); revelar=true; id='esc-'+i; nivel=1;
+    instr='Lee el escalón. Cuando lo termines, ¡aparece el siguiente! Toca una palabra para escucharla.'; }
+  else if(tipo==='con'){ item=CONMIGO[i]; texto=item.x; id='con-'+i; nivel=1;
+    instr='1️⃣ Toca «Escuchar a Pico» y sigue las palabras con tu dedito. 2️⃣ Luego toca «¡Leo yo!».'; }
+  else { item=CUENTOS[i]; texto=item.x; id='cue-'+i; nivel=item.n;
+    instr='Toca «¡Leo yo!» y lee el cuento en voz alta. Si una palabra es difícil, tócala para escucharla.'; }
+  $('#lecEmo').textContent = item.e; $('#lecTitulo').textContent = item.t; $('#lecTituloBarra').textContent = item.t;
+  $('#lecInstr').textContent = instr;
+  const L = construirLector($('#hoja'), texto, revelar);
+  lectura = {tipo, i, id, item, L, nivel, modo:'libre', t0:0, mejor:{p:0,est:[]}, prior:[], lastSid:0, lastTok:[], fin:false};
+  $('#btnPico').style.display = '';
+  $('#lecProg').textContent = `0/${L.palabras.length}`; $('#lecTiempo').textContent = '0'; $('#lecEscuche').textContent='';
+  $('#avisoSinVoz').classList.toggle('on', !Oido.ok);
+  mostrarBotonesLectura('libre');
+  pintarVelocidades();
+  $('#lecVolver').onclick = ()=> ir(tipo==='esc'?'escaleras':tipo==='con'?'conmigo':'cuentos');
+}
+function mostrarBotonesLectura(modo){
+  const leyendo = modo==='mic' || modo==='profe';
+  $('#btnPico').style.display = leyendo ? 'none' : '';
+  $('#velocidades').style.display = leyendo ? 'none' : '';
+  $('#btnLeo').style.display = leyendo ? 'none' : '';
+  $('#btnTermine').style.display = (leyendo && !(modo==='mic' && E.estricto)) ? '' : 'none';
+  $('#btnParar').textContent = (modo==='mic' && E.estricto) ? '🔄 Empezar de nuevo' : '⏹ Parar';
+  $('#btnParar').style.display = leyendo ? '' : 'none';
+}
+function pintarVelocidades(){
+  $$('.vel').forEach(b=>{ const v=+b.dataset.v; b.classList.toggle('sel', Math.abs(v-E.vel)<0.11); });
+}
+$('#velocidades').addEventListener('click', e=>{ const b=e.target.closest('.vel'); if(!b) return; E.vel=+b.dataset.v; guardar(); pintarVelocidades(); });
+
+/* tocar una palabra = escucharla */
+$('#hoja').addEventListener('click', e=>{
+  const w = e.target.closest('.w'); if(!w || !lectura) return;
+  const p = lectura.L.palabras[+w.dataset.i];
+  if(lectura.modo==='mic') return; // mientras escucha, no hablar (el micrófono lo oiría)
+  callar(); w.classList.add('pico-lee'); decir(p.texto.replace(new RegExp('[^'+LETRA+']','g'),''), 0.8).then(()=>w.classList.remove('pico-lee'));
+});
+
+$('#btnPico').onclick = ()=>{
+  if(!lectura) return;
+  const L = lectura.L;
+  let idx;
+  if(L.revelar){ const lin = L.visibles-1; idx = L.palabras.map((_,i)=>i).filter(i=>L.palabras[i].linea===lin); }
+  else idx = L.palabras.map((_,i)=>i);
+  picoLee(L, idx);
+};
+
+async function leoYo(){
+  if(!lectura) return;
+  callar();
+  if(!await asegurarMic()){ reintentoMic = leoYo; return; }
+  empezarMic();
+}
+$('#btnLeo').onclick = leoYo;
+$('#btnParar').onclick = ()=>{ if(!lectura) return; Oido.parar(); clearInterval(relojLectura); registrarSesionLectura(lectura); reiniciarLectura(); };
+$('#btnTermine').onclick = ()=> terminarLectura();
+
+function reiniciarLectura(){ const {tipo,i}=lectura; abrirLectura(tipo,i); }
+
+function prepararSesion(modo){
+  const S = lectura; S.modo = modo; S.fin=false; S.prior=[]; S.lastSid=0; S.lastTok=[]; S.mejor={p:0,est:new Array(S.L.palabras.length).fill(0)};
+  S.L.palabras.forEach(p=>p.el.classList.remove('ok','salto','mal','actual','pico-lee','corregida','intenta'));
+  $('#lecOtraVez').classList.remove('on'); S.ayudando=false;
+  mostrarBotonesLectura(modo);
+  S.t0 = performance.now(); S.tPrimera = 0;
+  clearInterval(relojLectura);
+  relojLectura = setInterval(()=>{ $('#lecTiempo').textContent = Math.floor((performance.now()-(S.tPrimera||S.t0))/1000); }, 250);
+}
+
+function empezarMic(){
+  prepararSesion('mic');
+  const S = lectura, L = S.L;
+  S.estricto = E.estricto; S.errVisto = 0; S.baseAyuda = {}; S.ultimoFinal = true;
+  mostrarBotonesLectura('mic');
+  pintarAlineacion(S.mejor);
+  Oido.alCambiar = on => $('#lecOreja').classList.toggle('on', on);
+  S.cb = (txt, sid, fin, res)=>{
+    if(!lectura || lectura!==S || S.fin || S.ayudando) return;
+    if(!S.tPrimera) S.tPrimera = performance.now();
+    if(sid!==S.lastSid){ S.prior = S.prior.concat(S.lastTok); S.lastSid = sid; }
+    S.lastTok = S.estricto ? tokFinales(res) : tokens(txt);
+    $('#lecEscuche').textContent = 'Escuché: «' + txt.trim().split(/\s+/).slice(-8).join(' ') + '»';
+    const oido = S.prior.concat(S.lastTok);
+    const r = S.estricto ? alinearEstricto(L.palabras, oido) : alinear(L.palabras, oido);
+    if(r.p >= S.mejor.p){
+      const avanzo = r.p > S.mejor.p;
+      S.mejor = r; pintarAlineacion(r);
+      if(avanzo){ tono(990,.05,'sine',.06); S.errVisto = 0; $('#lecOtraVez').classList.remove('on'); }
+      if(S.estricto && r.p < L.palabras.length){
+        const e = r.err[r.p] || 0;
+        if(e > S.errVisto){ S.errVisto = e; errorPalabra(S, r.p, e); }
+      }
+    }
+    if(S.mejor.p >= L.palabras.length){ S.fin = true; setTimeout(()=>terminarLectura(), 500); }
+  };
+  S.alNegar = err=>{
+    if(lectura!==S) return;
+    clearInterval(relojLectura); mostrarBotonesLectura('libre'); S.modo='libre';
+    mostrarAyudaMic(tipoErrorMic(err), leoYo);
+  };
+  Oido.iniciar(S.cb, S.alNegar);
+}
+/* Se equivocó en la palabra actual: no avanza. A los 3 intentos, Pico la lee. */
+function errorPalabra(S, i, e){
+  const el = S.L.palabras[i].el;
+  el.classList.remove('intenta'); void el.offsetWidth; el.classList.add('intenta');
+  setTimeout(()=>el.classList.remove('intenta'), 600);
+  tono(220,.18,'square',.05);
+  $('#lecOtraVez').classList.add('on');
+  const base = S.baseAyuda[i] || 0;
+  if(e - base >= 3){ S.baseAyuda[i] = e; ayudarPalabra(S, i); }
+  else { const d = (S.mejor.dijo && S.mejor.dijo[i]) || []; const ult = d[d.length-1];
+    picoDice(`¡Otra vez${nombreTxt()}! ${ult?'Dijiste «'+ult+'». ':''}Lee bien: «${limpia(S.L.palabras[i].texto)}»`, false); }
+}
+async function ayudarPalabra(S, i){
+  if(S.ayudando) return;
+  S.ayudando = true;
+  const p = S.L.palabras[i], w = p.texto.replace(new RegExp('[^'+LETRA+']','g'),'');
+  p.el.classList.add('pico-lee');
+  picoDice(`Escucha cómo se lee: «${w}». Ahora léela tú.`, false);
+  await decir(`Escucha: ${w}. ... Ahora léela tú.`, 0.75);
+  p.el.classList.remove('pico-lee');
+  S.ayudando = false;
+}
+function pintarAlineacion(r){
+  const L = lectura.L;
+  L.palabras.forEach((p,i)=>{
+    p.el.classList.toggle('ok', r.est[i]===1);
+    p.el.classList.toggle('corregida', r.est[i]===3);
+    p.el.classList.toggle('salto', r.est[i]===2);
+    p.el.classList.toggle('actual', i===r.p);
+  });
+  if(r.p < L.palabras.length){
+    const lin = L.palabras[r.p].linea;
+    const antes = L.visibles; revelarHasta(L, lin);
+    const el = L.palabras[r.p].el; const rc = el.getBoundingClientRect();
+    if(rc.top < 80 || rc.bottom > innerHeight-80) el.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+  $('#lecProg').textContent = `${r.est.filter(x=>x===1||x===3).length}/${L.palabras.length}`;
+}
+
+
+function terminarLectura(){
+  const S = lectura; if(!S) return;
+  S.fin = true; Oido.parar(); clearInterval(relojLectura);
+  const L = S.L, tot = L.palabras.length;
+  let est;
+  if(S.modo==='profe') est = L.palabras.map(p=>p.el.classList.contains('mal')?0:1);
+  else if(S.modo==='mic') est = S.mejor.est.slice();
+  else return;
+  const ok = est.filter(x=>x===1||x===3).length;
+  const primera = est.filter(x=>x===1).length;
+  const corregidas = est.filter(x=>x===3).length;
+  const seg = Math.max(3, tot*0.2, (performance.now() - (S.tPrimera||S.t0))/1000);
+  const ppm = Math.round(ok/(seg/60));
+  const prec = primera/tot;
+  const meta = METAS_PPM[S.nivel] || 30;
+  let n = 1; if(prec>=0.85) n=2; if(prec>=0.95 && ppm>=meta) n=3;
+  if(S.modo==='mic' && ok < tot*0.4) n = Math.min(n,1);
+  const reg = registrarSesionLectura(S) || {mal:0, errores:[]};
+  const r = {ok, tot, seg:Math.round(seg), ppm, prec, n, meta, corregidas, mal:reg.mal, errores:reg.errores};
+  E.historial.push({id:S.id, tit:S.item.t, f:Date.now(), ppm, prec:Math.round(prec*100), seg:r.seg, modo:S.modo, bien:primera, mal:reg.mal, errores:reg.errores.slice(0,25)});
+  if(E.historial.length>400) E.historial = E.historial.slice(-400);
+  ponerEstrellas(S.id, n); guardar();
+  mostrarResultado(r);
+}
+
+function miniGrafico(id){
+  const h = E.historial.filter(x=>x.id===id).slice(-6); if(h.length<2) return '';
+  const max = Math.max(...h.map(x=>x.ppm), 10), W=380, H=120, bw = W/h.length;
+  const barras = h.map((x,i)=>{ const bh = Math.max(4,(x.ppm/max)*(H-30)); const ult = i===h.length-1;
+    return `<rect x="${i*bw+8}" y="${H-18-bh}" width="${bw-16}" height="${bh}" rx="8" fill="${ult?'#f97316':'#7dd3fc'}"/>
+            <text x="${i*bw+bw/2}" y="${H-22-bh}" font-size="14" text-anchor="middle" fill="#0f172a" font-weight="600">${x.ppm}</text>
+            <text x="${i*bw+bw/2}" y="${H-3}" font-size="12" text-anchor="middle" fill="#64748b">${i+1}ª</text>`; }).join('');
+  return `<div class="mini-graf"><div style="font-weight:600;margin-bottom:4px">🔁 Tus lecturas de este texto (palabras por minuto)</div><svg viewBox="0 0 ${W} ${H}" width="100%">${barras}</svg></div>`;
+}
+
+function mostrarResultado(r){
+  const S = lectura;
+  const titulos = {3:'¡Lectura voladora! 🦅', 2:'¡Muy bien! 🐇', 1:'¡Buen intento! 🐢'};
+  const nErr = (r.errores||[]).length;
+  let msj;
+  if(nErr===0) msj = r.ppm >= r.meta ? `Leíste todas las palabras bien a la primera${nombreTxt()}.`
+                                     : `Leíste todas las palabras bien${nombreTxt()}. Ahora intenta leer un poquito más rápido.`;
+  else msj = `Leíste el texto completo${nombreTxt()}, pero te equivocaste en ${cant(nErr,'palabra','palabras')}. Practícala${nErr===1?'':'s'} y vuelve a leer.`;
+  const sig = siguienteItem(S.tipo, S.i);
+  $('#cajaResultado').innerHTML = `
+    <h2>${titulos[r.n]}</h2>
+    <div class="grandes-estrellas"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+    <p style="font-size:19px">${esc(msj)}</p>
+    <div class="datos">
+      <div class="dato"><b>${r.ppm}</b><small>${pl(r.ppm,'palabra','palabras')} por minuto</small></div>
+      <div class="dato"><b>${Math.round(r.prec*100)}%</b><small>bien a la primera</small></div>
+      <div class="dato"><b>${r.seg} s</b><small>tiempo</small></div>
+      <div class="dato"><b>${r.ok}/${r.tot}</b><small>palabras</small></div>
+      ${r.corregidas?`<div class="dato"><b>${r.corregidas}</b><small>${pl(r.corregidas,'palabra corregida','palabras corregidas')} 🔁</small></div>`:''}
+      <div class="dato"><b style="color:#b91c1c">${r.mal||0}</b><small>${pl(r.mal||0,'vez','veces')} que pronunció mal ❌</small></div>
+    </div>
+    ${listaErrores(r.errores)}
+    <div style="font-size:15px;color:#475569">🎯 Meta para 3 estrellas: ${r.meta} palabras por minuto y casi sin errores.</div>
+    ${miniGrafico(S.id)}
+    <div class="fila-btn">
+      <button class="btn naranja" id="rOtra">🔁 Leer otra vez</button>
+      ${S.tipo==='cue' ? '<button class="btn morado" id="rPreg">❓ Preguntas</button>' : ''}
+      ${sig!==null ? '<button class="btn verde" id="rSig">➡️ Siguiente</button>' : ''}
+      <button class="btn blanco" id="rMenu">🏠 Menú</button>
+    </div>`;
+  $('#mResultado').classList.add('on');
+  const sp = $$('#cajaResultado .grandes-estrellas span');
+  for(let k=0;k<r.n;k++) setTimeout(()=>{ sp[k].classList.add('on'); tono(660+k*220,.18,'triangle',.14); }, 350+k*380);
+  setTimeout(()=>{ if(r.n>=2){ confeti(r.n===3?180:90); sonidoFanfarria(); } decir(titulos[r.n].replace(/[^\p{L}\s¡!]/gu,'').trim() + ' ' + msj, 0.9); }, 350+r.n*380);
+  $('#rOtra').onclick = ()=>{ cerrarModal('mResultado'); reiniciarLectura(); };
+  $('#rMenu').onclick = ()=>{ cerrarModal('mResultado'); ir('menu'); };
+  if($('#rSig')) $('#rSig').onclick = ()=>{ cerrarModal('mResultado'); abrirLectura(S.tipo, sig); };
+  if($('#rPreg')) $('#rPreg').onclick = ()=>{ cerrarModal('mResultado'); preguntas(S.i); };
+}
+function listaErrores(errs){
+  if(!errs || !errs.length) return '<div style="font-size:17px;color:#15803d;font-weight:600;margin-bottom:6px">✅ ¡No te equivocaste en ninguna palabra!</div>';
+  return `<div style="text-align:left;background:#fff7ed;border-radius:16px;padding:10px 14px;margin:6px 0 10px">
+    <div style="font-weight:700;margin-bottom:4px">🔁 Palabras que debes practicar:</div>
+    ${errs.slice(0,8).map(e=>`<div style="font-size:16px">• <b style="font-family:Andika">${esc(e.w)}</b> — dijiste: <i>${esc(e.o)}</i> ${e.n>1?'('+e.n+' veces)':''}</div>`).join('')}
+    ${errs.length>8?`<div style="font-size:14px;color:#64748b">…y ${errs.length-8} más (míralas en 🏆 Mis Logros)</div>`:''}</div>`;
+}
+function siguienteItem(tipo,i){ const n = tipo==='esc'?ESCALERAS.length:tipo==='con'?CONMIGO.length:CUENTOS.length; return i+1<n ? i+1 : null; }
+function cerrarModal(id){ $('#'+id).classList.remove('on'); callar(); }
+
+/* ---------------- PREGUNTAS DE COMPRENSIÓN ---------------- */
+function preguntas(ci){
+  const c = CUENTOS[ci]; let k = 0, bien = 0, fallo = false;
+  const mostrar = ()=>{
+    if(k>=c.q.length){
+      E.comp['cue-'+ci] = Math.max(E.comp['cue-'+ci]||0, bien); guardar();
+      $('#cajaPreguntas').innerHTML = `<h2>${bien===c.q.length?'🧠 ¡Entendiste todo!':'🧠 ¡Bien hecho!'}</h2>
+        <p style="font-size:22px;margin:10px 0">Respondiste bien <b>${bien}</b> de <b>${c.q.length}</b> ${pl(c.q.length,'pregunta','preguntas')} a la primera.</p>
+        <div class="fila-btn"><button class="btn naranja" id="pOtra">🔁 Leer otra vez</button>${siguienteItem('cue',ci)!==null?'<button class="btn verde" id="pSig">➡️ Siguiente cuento</button>':''}<button class="btn blanco" id="pMenu">📖 Cuentos</button></div>`;
+      if(bien===c.q.length){ confeti(120); sonidoFanfarria(); }
+      decir(bien===c.q.length?`¡Entendiste todo${nombreTxt()}!`:'¡Bien hecho!');
+      $('#pOtra').onclick=()=>{ cerrarModal('mPreguntas'); abrirLectura('cue',ci); };
+      $('#pMenu').onclick=()=>{ cerrarModal('mPreguntas'); ir('cuentos'); };
+      if($('#pSig')) $('#pSig').onclick=()=>{ cerrarModal('mPreguntas'); abrirLectura('cue',ci+1); };
+      return;
+    }
+    const [pq, ops] = c.q[k]; fallo = false;
+    const orden = mezclar(ops);
+    $('#cajaPreguntas').innerHTML = `<div style="font-size:15px;color:#64748b">Pregunta ${k+1} de ${c.q.length} · ${c.e} ${esc(c.t)}</div>
+      <div class="pregunta" style="margin-top:10px">${esc(pq)} <button class="btn chico cian" id="pOir">🔊</button></div>
+      <div class="opciones">${orden.map(o=>`<button class="opcion" data-o="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
+    $('#pOir').onclick = ()=> decir(pq + ' ' + orden.join(', '), 0.9);
+    $$('#cajaPreguntas .opcion').forEach(b=> b.onclick = ()=>{
+      if(b.dataset.o === ops[0]){ b.classList.add('si'); sonidoBien(); if(!fallo) bien++; decir('¡Correcto!'); setTimeout(()=>{ k++; mostrar(); }, 1100); }
+      else { b.classList.add('no'); fallo = true; tono(200,.25,'sawtooth',.08); setTimeout(()=>b.classList.remove('no'),400); }
+    });
+  };
+  $('#mPreguntas').classList.add('on'); mostrar();
+}
+
+/* ---------------- PALABRAS RÁPIDAS ---------------- */
+let juegoPal = null, relojPal = null;
+function pintarNiveles(){
+  $('#palJuego').classList.remove('on'); $('#palNiveles').style.display='';
+  $('#listaNiveles').innerHTML = Object.entries(PALABRAS).map(([k,v])=>`
+    <button class="isla" style="--a:${v.color[0]};--b:${v.color[1]};--o:${v.color[2]}" data-nivel="${k}">
+      <span class="num">${estrellasTxt(E.estrellas['pal-'+k]||0)}</span>
+      <div class="emo">${v.emo}</div><h3>${v.nombre}</h3><p>${v.desc}</p>
+      <p style="margin-top:6px"><b>🏅 Récord: ${E.record[k]||0} ${pl(E.record[k]||0,'palabra','palabras')}</b></p></button>`).join('') +
+    (Object.values(E.pron).some(r=>r.mal>0) ? `<button class="isla" style="--a:#60a5fa;--b:#7c3aed;--o:#5b21b6" data-nivel="rep">
+      <span class="num">🎯</span><div class="emo">🔁</div><h3>Mis palabras difíciles</h3><p>Practica las palabras que leíste mal.</p></button>` : '');
+}
+$('#listaNiveles').addEventListener('click', e=>{ const b=e.target.closest('[data-nivel]'); if(b) iniciarPalabras(b.dataset.nivel==='rep'?'rep':+b.dataset.nivel); });
+
+function practicaN(){
+  const emo = {}; Object.values(PALABRAS).forEach(v=>v.lista.forEach(([w,e])=>emo[norm(w)]=e));
+  const difs = Object.entries(E.pron).filter(([k,r])=>r.mal>0)
+    .sort((a,b)=> (b[1].mal/(b[1].bien+b[1].mal)) - (a[1].mal/(a[1].bien+a[1].mal)) || b[1].mal-a[1].mal)
+    .slice(0,25).map(([k,r])=>[r.w, emo[k]||'⭐']);
+  return {nombre:'Palabras para practicar', emo:'🎯', lista:difs, metas:[5,10,15]};
+}
+async function iniciarPalabras(nv){
+  const N = nv==='rep' ? practicaN() : PALABRAS[nv];
+  if(!N.lista.length){ picoDice('¡Aún no tienes palabras para practicar! Primero lee un cuento.'); return; }
+  const micListo = Oido.ok ? await asegurarMic() : false;
+  if(Oido.ok && !micListo){ reintentoMic = ()=>iniciarPalabras(nv); return; }
+  $('#palNiveles').style.display='none'; $('#palJuego').classList.add('on');
+  const J = juegoPal = {nv, N, lista:mezclar(N.lista), k:0, aciertos:[], dur:60, ini:0, consumido:0, sid:0, fin:false, errores:0, errPal:0};
+  const estrictoMic = micListo && E.estricto;
+  $('#palBien').style.display = estrictoMic ? 'none' : '';
+  $('#palPaso').style.display = estrictoMic ? 'none' : '';
+  $('#palErrores').textContent='0'; $('#palOtraVez').classList.remove('on');
+  mostrarPalabra(); $('#palAciertos').textContent='0'; $('#palTiempo').textContent='60'; $('#relojBarra').style.width='100%';
+  $('#palEscuche').textContent='';
+  // cuenta regresiva
+  $('#cuenta').classList.add('on');
+  for(const t of ['3','2','1','¡Ya!']){
+    if(juegoPal!==J){ $('#cuenta').classList.remove('on'); return; }
+    const s=$('#cuentaNum'); s.textContent=t; s.style.animation='none'; void s.offsetWidth; s.style.animation='';
+    tono(t==='¡Ya!'?1046:523,.2,'triangle',.15); await espera(800);
+  }
+  $('#cuenta').classList.remove('on');
+  if(juegoPal!==J) return;
+  J.ini = performance.now();
+  relojPal = setInterval(()=>{
+    const rest = Math.max(0, J.dur - (performance.now()-J.ini)/1000);
+    $('#palTiempo').textContent = Math.ceil(rest); $('#relojBarra').style.width = (rest/J.dur*100)+'%';
+    if(rest<=0) finPalabras();
+  }, 200);
+  if(micListo){
+    Oido.alCambiar = on => $('#palOreja').classList.toggle('on', on);
+    iniciarOidoPal(J, err=>{ $('#palBien').style.display=''; $('#palPaso').style.display='';
+      mostrarAyudaMic(tipoErrorMic(err)); });
+  }
+}
+function mostrarPalabra(){
+  const J = juegoPal; if(!J) return;
+  const [w] = J.lista[J.k % J.lista.length];
+  $('#palCarta').innerHTML = htmlSilabas(w);
+}
+function acierto(){
+  const J = juegoPal; if(!J || J.fin || !J.ini) return;
+  const par = J.lista[J.k % J.lista.length];
+  J.aciertos.push(par); $('#palAciertos').textContent = J.aciertos.length;
+  registrarPron(par[0], true, []);
+  const c = $('#palCarta'); c.classList.remove('bien'); void c.offsetWidth; c.classList.add('bien');
+  const pr = document.createElement('div'); pr.className='premio'; pr.textContent = par[1]; c.appendChild(pr);
+  sonidoBien();
+  J.k++; J.errPal = 0; $('#palOtraVez').classList.remove('on');
+  setTimeout(()=>{ if(juegoPal===J && !J.fin) mostrarPalabra(); }, 380);
+}
+$('#palBien').onclick = ()=> acierto();
+$('#palPaso').onclick = ()=>{ const J=juegoPal; if(!J||J.fin||!J.ini) return; J.k++; mostrarPalabra(); tono(300,.08,'sine',.08); };
+$('#palEscuchar').onclick = ()=>{
+  const J=juegoPal; if(!J) return;
+  // ayudar: pausa el oído mientras Pico habla para que no se cuente sola
+  const w = J.lista[J.k % J.lista.length][0];
+  J.ayudando = true;
+  decir(w, 0.8).then(()=>{ J.ayudando = false; if(juegoPal===J && !J.fin){
+    if(!E.estricto){ J.k++; mostrarPalabra(); }   // en modo exigente, después de escucharla debe leerla
+  } });
+};
+function iniciarOidoPal(J, alNegar){
+  // reinicia el reconocimiento con el mismo manejador
+  Oido.iniciar((txt,sid,fin,res)=>{
+    if(juegoPal!==J || J.fin || J.ayudando) return;
+    if(sid!==J.sid){ J.sid=sid; J.consumido=0; }
+    const tk = E.estricto ? tokFinales(res) : tokens(txt); let seguir=true;
+    $('#palEscuche').textContent = 'Escuché: «' + txt.trim().split(/\s+/).slice(-4).join(' ') + '»';
+    if(!E.estricto){
+      while(seguir){ seguir=false; const obj=fon(norm(J.lista[J.k % J.lista.length][0]));
+        for(let j=J.consumido;j<tk.length;j++){ if(coincide(tk[j],obj)){ J.consumido=j+1; acierto(); seguir=true; break; } } }
+      return;
+    }
+    // Modo exigente: cada palabra escuchada se revisa; si no es la correcta, no avanza
+    // solo resultados finales: el reconocedor ya no «adivina» la palabra a medias
+    const minC = MIN_CONF();
+    for(let j=J.consumido;j<tk.length;j++){
+      if(J.fin) return;
+      J.consumido = j+1;
+      if(J.ayudando) continue;
+      const obj = objetivo(J.lista[J.k % J.lista.length][0]), t = tk[j];
+      const claro = !(minC && t.c>0 && t.c<minC);
+      if(igual(t,obj) && claro){ acierto(); continue; }
+      if(J.k>0 && igual(t, objetivo(J.lista[(J.k-1) % J.lista.length][0]))) continue; // repitió la anterior
+      errorPal(J, igual(t,obj) ? t.raw+' (no se oyó claro)' : t.raw);
+    }
+  }, alNegar || (()=>{}));
+}
+function errorPal(J, dijo){
+  J.errores++; J.errPal++; $('#palErrores').textContent = J.errores;
+  const w0 = J.lista[J.k % J.lista.length][0];
+  registrarPron(w0, false, [dijo||'?']); guardar();
+  J.errLista = J.errLista || {}; const e = J.errLista[w0] || (J.errLista[w0] = {w:w0, o:[], n:0}); e.n++; if(dijo) e.o.push(dijo);
+  picoDice(`¡Otra vez! ${dijo?'Dijiste «'+dijo+'». ':''}Lee: «${w0}»`, false);
+  const c = $('#palCarta'); c.classList.remove('mal'); void c.offsetWidth; c.classList.add('mal');
+  setTimeout(()=>c.classList.remove('mal'), 550);
+  tono(220,.18,'square',.05); $('#palOtraVez').classList.add('on');
+  if(J.errPal >= 3){
+    J.errPal = 0; J.ayudando = true;
+    const w = J.lista[J.k % J.lista.length][0];
+    picoDice(`Escucha cómo se lee: «${w}». Ahora léela tú.`, false);
+    decir(`Escucha: ${w}. ... Ahora léela tú.`, 0.75).then(()=>{
+      J.ayudando = false;
+    });
+  }
+}
+$('#palParar').onclick = ()=>{ if(juegoPal && juegoPal.ini) finPalabras(); else { detenerTodo(); pintarNiveles(); } };
+
+function finPalabras(){
+  const J = juegoPal; if(!J || J.fin) return;
+  J.fin = true; clearInterval(relojPal); Oido.parar();
+  const seg = Math.min(J.dur, (performance.now()-J.ini)/1000);
+  const n = J.aciertos.length;
+  const ppm = seg>=20 ? Math.round(n/(seg/60)) : n; // si se detiene muy pronto, no se extrapola
+  const metas = J.N.metas;
+  let est = 0; metas.forEach((m,i)=>{ if(ppm>=m) est=i+1; }); if(n>0) est = Math.max(est,1);
+  const id = 'pal-'+J.nv;
+  const record = J.nv!=='rep' && ppm > (E.record[J.nv]||0) && seg>=20;
+  if(record) E.record[J.nv] = ppm;
+  if(est) ponerEstrellas(id, est);
+  const errs = Object.values(J.errLista||{}).map(e=>({w:e.w, o:e.o.join(', ')||'?', n:e.n}));
+  const precP = (n+J.errores) ? Math.round(n/(n+J.errores)*100) : 100;
+  E.historial.push({id, tit:J.N.nombre, f:Date.now(), ppm, prec:precP, seg:Math.round(seg), modo:'palabras', bien:n, mal:J.errores, errores:errs.slice(0,25)});
+  guardar();
+  const titulo = est===3?'¡Ojos de águila! 🦅':est===2?'¡Muy rápido! 🐇':est===1?'¡Bien hecho! 🐢':'¡Sigue intentando! 💪';
+  $('#cajaResultado').innerHTML = `
+    <h2>${titulo}</h2>
+    <div class="grandes-estrellas"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+    ${record?'<p style="font-size:22px;color:#c2410c;font-weight:700">🏅 ¡Nuevo récord!</p>':''}
+    <div class="datos">
+      <div class="dato"><b>${n}</b><small>${pl(n,'palabra leída','palabras leídas')}</small></div>
+      <div class="dato"><b>${ppm}</b><small>${pl(ppm,'palabra','palabras')} por minuto</small></div>
+      ${J.nv!=='rep'?`<div class="dato"><b>${E.record[J.nv]||0}</b><small>tu récord</small></div>`:''}
+      <div class="dato"><b>${J.errores}</b><small>${pl(J.errores,'vez','veces')} que repitió 🔁</small></div>
+    </div>
+    ${listaErrores(errs)}
+    ${n?`<div style="font-weight:600">Tus premios:</div><div class="premios-leidos">${J.aciertos.map(a=>a[1]).join('')}</div>`:''}
+    <div style="font-size:15px;color:#475569;margin-top:8px">🎯 Estrellas: ${metas.map((m,i)=>'⭐'.repeat(i+1)+' '+m).join(' · ')} palabras por minuto</div>
+    ${miniGrafico(id)}
+    <div class="fila-btn"><button class="btn naranja" id="rOtra">🔁 Jugar otra vez</button><button class="btn blanco" id="rNiv">⚡ Niveles</button><button class="btn blanco" id="rMenu">🏠 Menú</button></div>`;
+  $('#mResultado').classList.add('on');
+  const sp = $$('#cajaResultado .grandes-estrellas span');
+  for(let k=0;k<est;k++) setTimeout(()=>{ sp[k].classList.add('on'); tono(660+k*220,.18,'triangle',.14); }, 350+k*380);
+  setTimeout(()=>{ if(est>=2||record){ confeti(150); sonidoFanfarria(); } const dicho = n===0 ? `No leíste ninguna palabra${nombreTxt()}. ¡Inténtalo otra vez!`
+            : `Leíste ${cant(n,'palabra','palabras')} bien${nombreTxt()}.` + (J.errores ? ` Repetiste ${cant(J.errores,'vez','veces',true)}.` : '');
+    decir(`${titulo.replace(/[^\p{L}\s¡!]/gu,'').trim()} ${dicho}`, 0.9); }, 350+est*380);
+  $('#rOtra').onclick = ()=>{ cerrarModal('mResultado'); iniciarPalabras(J.nv); };
+  $('#rNiv').onclick = ()=>{ cerrarModal('mResultado'); detenerTodo(); pintarNiveles(); };
+  $('#rMenu').onclick = ()=>{ cerrarModal('mResultado'); ir('menu'); };
+}
+
+/* ---------------- LOGROS ---------------- */
+function pintarLogros(){
+  const h = E.historial, lect = h.filter(x=>x.modo!=='palabras');
+  const tot = totalEstrellas();
+  const mejor = lect.length ? Math.max(...lect.map(x=>x.ppm)) : 0;
+  const prom = lect.length ? Math.round(lect.slice(-5).reduce((a,x)=>a+x.ppm,0)/Math.min(5,lect.length)) : 0;
+  $('#logDatos').innerHTML = `
+    <div class="dato"><b>⭐ ${tot}</b><small>estrellas</small></div>
+    <div class="dato"><b>${h.length}</b><small>lecturas y juegos</small></div>
+    <div class="dato"><b>${mejor}</b><small>mejor rapidez (ppm)</small></div>
+    <div class="dato"><b>${prom}</b><small>promedio últimas 5</small></div>
+    <div class="dato"><b>${Object.values(E.comp).reduce((a,b)=>a+b,0)}</b><small>preguntas acertadas 🧠</small></div>`;
+  // gráfico de línea
+  const d = lect.slice(-20);
+  if(d.length<2){ $('#logGrafico').innerHTML = '<p style="text-align:center;padding:20px;color:#475569">📚 Lee al menos dos textos con el micrófono para ver tu gráfico.</p>'; }
+  else {
+    const W=700,H=240,pad=34, max=Math.max(...d.map(x=>x.ppm), 40);
+    const X=i=>pad+i*(W-2*pad)/(d.length-1), Y=v=>H-pad-(v/max)*(H-2*pad);
+    const pts = d.map((x,i)=>`${X(i)},${Y(x.ppm)}`).join(' ');
+    const guias = [0,.25,.5,.75,1].map(f=>{ const v=Math.round(max*f); return `<line x1="${pad}" x2="${W-pad}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e2e8f0"/><text x="4" y="${Y(v)+4}" font-size="12" fill="#64748b">${v}</text>`; }).join('');
+    $('#logGrafico').innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%">${guias}
+      <polyline points="${pad},${H-pad} ${pts} ${W-pad},${H-pad}" fill="rgba(249,115,22,.12)" stroke="none"/>
+      <polyline points="${pts}" fill="none" stroke="#f97316" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+      ${d.map((x,i)=>`<circle cx="${X(i)}" cy="${Y(x.ppm)}" r="6" fill="#fff" stroke="#f97316" stroke-width="3"><title>${esc(x.tit)}: ${x.ppm} ppm</title></circle>`).join('')}
+    </svg>`;
+  }
+  const des = Math.floor(tot/6);
+  $('#album').innerHTML = STICKERS.map((s,i)=>`<div class="sticker ${i<des?'on':''}" title="${i<des?'¡Desbloqueado!':'Necesitas '+((i+1)*6)+' estrellas'}"><span>${s}</span></div>`).join('');
+  const ult = h.slice(-15).reverse();
+  $('#tablaHist').innerHTML = `<tr><th>Fecha</th><th>Lectura</th><th>ppm</th><th>Precisión</th><th>✅</th><th>❌</th><th>Se equivocó en</th><th>Modo</th></tr>` +
+    (ult.length ? ult.map(x=>`<tr><td>${new Date(x.f).toLocaleDateString('es-PE',{day:'2-digit',month:'short'})} ${new Date(x.f).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})}</td><td>${esc(x.tit)}</td><td><b>${x.ppm}</b></td><td>${x.prec}%</td><td>${x.bien??'-'}</td><td>${x.mal??'-'}</td><td style="font-size:14px">${(x.errores||[]).map(e=>esc(e.w)).join(', ')||'—'}</td><td>${{mic:'🎤',profe:'👩‍🏫',palabras:'⚡'}[x.modo]||''}</td></tr>`).join('')
+                : '<tr><td colspan="8" style="text-align:center;color:#64748b">Aún no hay lecturas.</td></tr>');
+  // historial de pronunciación por palabra
+  const pr = Object.values(E.pron);
+  const tb = pr.reduce((a,r)=>a+r.bien,0), tm = pr.reduce((a,r)=>a+r.mal,0);
+  $('#pronDatos').innerHTML = `
+    <div class="dato"><b style="color:#15803d">${tb}</b><small>veces pronunció bien ✅</small></div>
+    <div class="dato"><b style="color:#b91c1c">${tm}</b><small>veces pronunció mal ❌</small></div>
+    <div class="dato"><b>${tb+tm?Math.round(tb/(tb+tm)*100):0}%</b><small>de aciertos</small></div>
+    <div class="dato"><b>${pr.filter(r=>r.mal>0).length}</b><small>palabras difíciles</small></div>`;
+  const orden = pr.slice().sort((a,b)=> b.mal-a.mal || b.f-a.f);
+  $('#tablaPron').innerHTML = `<tr><th>Palabra</th><th>✅ Bien</th><th>❌ Mal</th><th>% acierto</th><th>Cómo lo dijo</th></tr>` +
+    (orden.length ? orden.map(r=>{ const pc = Math.round(r.bien/((r.bien+r.mal)||1)*100);
+      return `<tr style="${r.mal?'background:#fff7ed':''}"><td style="font-family:Andika;font-size:19px"><b>${esc(r.w)}</b></td><td>${r.bien}</td><td style="color:${r.mal?'#b91c1c':'inherit'};font-weight:${r.mal?700:400}">${r.mal}</td>
+        <td style="white-space:nowrap"><span style="background:#e2e8f0;border-radius:99px;height:10px;width:70px;display:inline-block;vertical-align:middle;overflow:hidden"><span style="display:block;height:100%;width:${pc}%;background:${pc>=80?'#22c55e':pc>=50?'#f59e0b':'#ef4444'}"></span></span> ${pc}%</td>
+        <td style="font-size:14px;color:#7c2d12">${r.oidos.map(esc).join(', ')||'—'}</td></tr>`; }).join('')
+      : '<tr><td colspan="5" style="text-align:center;color:#64748b">Aún no hay palabras leídas con el micrófono.</td></tr>');
+  $('#btnPracticar').disabled = !pr.some(r=>r.mal>0);
+}
+$('#btnPracticar').onclick = ()=>{ ir('palabras'); iniciarPalabras('rep'); };
+$('#btnExpPron').onclick = ()=>{
+  const filas = [['Nombre','Palabra','Veces bien','Veces mal','% acierto','Cómo lo dijo (últimas)','Última vez']]
+    .concat(Object.values(E.pron).sort((a,b)=>b.mal-a.mal).map(r=>[E.nombre||'', r.w, r.bien, r.mal, Math.round(r.bien/((r.bien+r.mal)||1)*100), r.oidos.join(' | '), new Date(r.f).toLocaleString('es-PE')]));
+  descargarCSV(filas, 'pronunciacion');
+};
+function descargarCSV(filas, pref){
+  const csv = '\ufeff' + filas.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(';')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download = `${pref}_${(E.nombre||'registro').replace(/\s+/g,'_')}.csv`; a.click();
+}
+$('#btnExportar').onclick = ()=>{
+  const filas = [['Nombre','Fecha','Hora','Lectura','Palabras por minuto','Precision %','Segundos','Bien a la primera','Pronunciaciones malas','Palabras con error','Modo']]
+    .concat(E.historial.map(x=>{ const f=new Date(x.f); return [E.nombre||'', f.toLocaleDateString('es-PE'), f.toLocaleTimeString('es-PE'), x.tit, x.ppm, x.prec, x.seg, x.bien??'', x.mal??'', (x.errores||[]).map(e=>e.w+' ('+e.o+')').join(' | '), x.modo]; }));
+  const csv = '﻿' + filas.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(';')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download = `lee-y-vuela_${(E.nombre||'registro').replace(/\s+/g,'_')}.csv`; a.click();
+};
+
+/* ---------------- AJUSTES ---------------- */
+function aplicarAjustes(){
+  document.body.classList.toggle('silabas', E.silabas);
+  document.documentElement.style.setProperty('--tam', E.tam+'px');
+}
+function llenarVoces(){
+  const sel = $('#ajVoz'); const vs = vocesEs();
+  sel.innerHTML = vs.length ? vs.map(v=>`<option value="${esc(v.name)}" ${VOZ&&v.name===VOZ.name?'selected':''}>${esc(v.name)} (${v.lang})</option>`).join('') : '<option>Sin voces en español</option>';
+}
+$$('.btnAjustes').forEach(b=> b.onclick = ()=>{
+  $('#ajNombre').value = E.nombre; $('#ajSil').classList.toggle('on', E.silabas); $('#ajExig').value = String(E.exig);
+  $('#ajTam').value = E.tam; $('#ajVel').value = E.vel; llenarVoces();
+  $('#mAjustes').classList.add('on');
+});
+$('#ajExig').onchange = e=>{ E.exig=+e.target.value; E.estricto = E.exig>=1; guardar(); };
+$('#ajSil').onclick = ()=>{ E.silabas=!E.silabas; $('#ajSil').classList.toggle('on',E.silabas); aplicarAjustes(); guardar(); };
+$('#ajTam').oninput = e=>{ E.tam=+e.target.value; aplicarAjustes(); guardar(); };
+$('#ajVel').oninput = e=>{ E.vel=+e.target.value; guardar(); pintarVelocidades(); };
+$('#ajVoz').onchange = e=>{ E.voz=e.target.value; guardar(); elegirVoz(); };
+$('#ajNombre').oninput = e=>{ const n=e.target.value.trim(); E.nombre = n ? n.charAt(0).toUpperCase()+n.slice(1) : ''; guardar(); pintarMenu(); };
+$('#ajProbar').onclick = ()=> decir(`¡Hola${nombreTxt()}! Soy Pico, el picaflor lector.`, E.vel);
+$('#ajBorrar').onclick = ()=>{
+  if(confirm('¿Borrar todas las estrellas, récords y lecturas guardadas?')){
+    const keep = {nombre:E.nombre, silabas:E.silabas, tam:E.tam, vel:E.vel, voz:E.voz};
+    E = Object.assign(porDefecto(), keep); guardar(); refrescarContadores();
+    if(pantallaActual==='logros') pintarLogros();
+  }
+};
+$('#ajCerrar').onclick = ()=> $('#mAjustes').classList.remove('on');
+$$('.modal').forEach(m=> m.addEventListener('click', e=>{ if(e.target===m && m.id==='mAjustes') m.classList.remove('on'); }));
+
+/* ---------------- MICRÓFONO DENTRO DE IFRAME ---------------- */
+let enIframe = false; try{ enIframe = window.self !== window.top; }catch(e){ enIframe = true; }
+function abrirVentanaNueva(){
+  if(/^https?:|^file:/.test(location.href)) window.open(location.href, '_blank');
+  else {
+    const html = '<!DOCTYPE html>' + document.documentElement.outerHTML;
+    window.open(URL.createObjectURL(new Blob([html],{type:'text/html'})), '_blank');
+  }
+}
+$$('.btnVentana').forEach(b=> b.onclick = abrirVentanaNueva);
+if(enIframe && micBloqueadoPorMarco()) $$('.avisoIframe').forEach(a=>a.classList.add('on'));
+
+/* ---------------- ARRANQUE ---------------- */
+(function nubes(){
+  const c = $('#nubes'); c.innerHTML='';
+  for(let i=0;i<7;i++){
+    const n = document.createElement('div'); n.className='nube';
+    const w = 90+Math.random()*140; n.style.width=w+'px'; n.style.height=w*.35+'px';
+    n.style.top = (4+Math.random()*55)+'%';
+    n.style.animationDuration = (45+Math.random()*50)+'s'; n.style.animationDelay = (-Math.random()*90)+'s';
+    n.style.opacity = .55+Math.random()*.4;
+    c.appendChild(n);
+  }
+})();
+ponerPico($('#picoInicio')); $$('.picoMini').forEach(ponerPico);
+{ const b=$('#burbuja'); const d=document.createElement('div'); ponerPico(d); b.appendChild(d.firstElementChild); }
+if(E.nombre) $('#inNombre').value = E.nombre;
+aplicarAjustes(); refrescarContadores();
+</script>
+</body>
+</html>
